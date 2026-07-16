@@ -1,0 +1,24 @@
+{
+    "dataworkspace.excludedProjects": [
+        "127.0.0.1/127.0.0.1.sqlproj",
+        "localhost/localhost.sqlproj"
+    ],
+    "editor.quickSuggestions": false,
+    "editor.suggestOnTriggerCharacters": false,
+    "editor.inlineSuggest.enabled": false,
+    "editor.acceptSuggestionOnCommitCharacter": false,
+    "editor.quickSuggestionsDelay": 10,
+  "editor.suggest.showWords": false,
+  "editor.suggest.showSnippets": false,
+  "editor.suggest.showMethods": false,
+  "editor.suggest.showFunctions": false,
+  "editor.suggest.showProperties": false,
+  "editor.suggest.showVariables": false,
+  "editor.suggest.showClasses": false,
+  "editor.suggest.showInterfaces": false,
+  "editor.suggest.showConstants": false,
+  "editor.suggest.showEnums": false,
+  "github.copilot.editor.enableAutoCompletions": false
+}
+
+       

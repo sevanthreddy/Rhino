@@ -1,0 +1,111 @@
+using Microsoft.AspNetCore.Mvc;
+using Backend.Dtos;
+using Backend.Services;
+using Google.Apis.Auth;
+using Backend.Models;
+using Backend.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+
+namespace Backend.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class RegisterandLoginController : ControllerBase
+{
+    private readonly IAuthService _authService;
+    private readonly ApplicationDbContext _context;
+
+    // Inject the AuthService instead of the DbContext!
+    public RegisterandLoginController(IAuthService authService, ApplicationDbContext context)
+    {
+        _authService = authService;
+        _context = context;
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
+    {
+        if (registerDto == null)
+        {
+            return BadRequest("Invalid Request");
+        }
+
+        // Hand off all the database checks and heavy lifting to the service
+        var (success, message) = await _authService.RegisterUserAsync(registerDto);
+
+        if (!success)
+        {
+            return BadRequest(message);
+        }
+
+        return Ok(message);
+    }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(LoginDto loginDto)
+    {
+        // Implement login logic here
+        var (success, message, token, refreshToken) = await _authService.LoginUserAsync(loginDto);
+
+        if (!success)
+        {
+            return BadRequest(message);
+        }
+
+        return Ok(new { Message = message, Token = token, RefreshToken = refreshToken });
+    }
+
+    [HttpPost("google-login")]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
+    {
+        try
+        {
+            // 🛡️ 1. Cryptographically verify the token with Google's public keys
+            var settings = new GoogleJsonWebSignature.ValidationSettings()
+            {
+                Audience = new List<string> { "548377775699-jvaoa9mu4cvedtflbd9tb42in3m8icso.apps.googleusercontent.com" }
+            };
+
+            // If the token is fake, expired, or tampered with, this line will throw an exception
+            var payload = await GoogleJsonWebSignature.ValidateAsync(dto.Token, settings);
+
+            // 🔍 2. Extract user identity claims from the verified Google payload
+            string email = payload.Email;
+            string name = payload.Name;
+
+            // 🗄️ 3. Check if this email already exists in your SQL Server database
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                // 🆕 4. If they don't exist, register them on-the-fly!
+                user = new User
+                {
+                    Email = email,
+                    Username = name.Replace(" ", "").ToLower(),
+                    PasswordHash = "GOOGLE_AUTH_EXTERNAL",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"🎉 Automatically registered fresh Google user: {email}");
+            }
+
+            // 🔑 5. Generate your OWN application's custom JWT authentication token
+            var myAppToken = _authService.GenerateJwtToken(user);
+
+            // 🚀 6. Send the application token back to React
+            return Ok(new { token = myAppToken });
+        }
+        catch (InvalidJwtException)
+        {
+            return BadRequest("Invalid or tampered Google token configuration.");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server authentication error: {ex.Message}");
+        }
+    }
+}

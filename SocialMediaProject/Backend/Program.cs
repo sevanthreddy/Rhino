@@ -1,0 +1,84 @@
+using System.Text;
+using Backend.Data;
+using Backend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+var builder = WebApplication.CreateBuilder(args);
+
+// === PHASE 1: REGISTER SERVICES (Must be BEFORE builder.Build()) ===
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Backend API", Version = "v1" });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter the JWT token. Swagger will add the 'Bearer ' prefix."
+    });
+});
+
+builder.Services.AddScoped<IAuthService,AuthService>();
+builder.Services.AddScoped<IPostService,PostService>();
+builder.Services.AddScoped<IReplyService,ReplyService>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Your React app's Vite address
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    // 2. Define the exact rules for what makes a token "valid"
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true, // Force the system to check our signature
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretBackEndKeyPolymedicure123!")), // Our secret key
+        ValidateIssuer = false,   // Set to true if you want to verify the specific server that generated it
+        ValidateAudience = false, // Set to true if you want to verify a specific frontend application URL
+        RequireExpirationTime = true,
+        ValidateLifetime = true,  // Force expiration validation checks
+        ClockSkew = TimeSpan.Zero // Removes the default 5-minute grace period buffer
+    };
+});
+builder.Services.AddAuthorization();
+// Moved up here! Now .NET knows about the database before building the app
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// ===================================================================
+
+var app = builder.Build();
+
+// === PHASE 2: CONFIGURE PIPELINE (Must be AFTER builder.Build()) ===
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.EnablePersistAuthorization();
+    });
+}
+app.UseCors("AllowReactApp");
+app.UseHttpsRedirection();
+app.UseAuthentication(); // 💂‍♂️ Guard 1: Who are you? (Extracts and validates the JWT)
+app.UseAuthorization();  // 💂‍♂️ Guard 2: Are you allowed in? (Checks endpoint permissions)
+app.UseStaticFiles();
+app.MapControllers();
+
+app.Run();

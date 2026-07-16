@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "sqlproj: Build 127.0.0.1",
+			"type": "process",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"/Users/sevanthreddy/Projects/SocialMediaProject/127.0.0.1/127.0.0.1.sqlproj",
+				"/p:NetCoreBuild=true",
+				"/p:NETCoreTargetsPath=/Users/sevanthreddy/.vscode/extensions/ms-mssql.sql-database-projects-vscode-1.6.1/BuildDirectory",
+				"/p:SystemDacpacsLocation=/Users/sevanthreddy/.vscode/extensions/ms-mssql.sql-database-projects-vscode-1.6.1/BuildDirectory"
+			],
+			"problemMatcher": "$sqlproj-problem-matcher",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Builds the 127.0.0.1 SQL project"
+		},
+		{
+			"label": "sqlproj: Build localhost",
+			"type": "process",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"/Users/sevanthreddy/Projects/SocialMediaProject/localhost/localhost.sqlproj"
+			],
+			"problemMatcher": "$sqlproj-problem-matcher",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Builds the localhost SQL project"
+		}
+	]
+}
