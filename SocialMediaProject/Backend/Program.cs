@@ -1,7 +1,9 @@
 using System.Text;
 using Backend.Data;
+using Backend.Hubs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -9,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // === PHASE 1: REGISTER SERVICES (Must be BEFORE builder.Build()) ===
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -28,13 +31,19 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<IAuthService,AuthService>();
 builder.Services.AddScoped<IPostService,PostService>();
 builder.Services.AddScoped<IReplyService,ReplyService>();
-builder.Services.AddCors(options =>
+builder.Services.AddScoped<IFollowService, FollowService>();
+builder.Services.AddScoped<IProfileService,ProfileService>();
+builder.Services.AddScoped<IMessageService,MessageService>();
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+builder.Services.AddSingleton<IPresenceService,PresenceService>();
+;builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
         policy.WithOrigins("http://localhost:5173") // Your React app's Vite address
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 builder.Services.AddAuthentication(options =>
@@ -54,6 +63,23 @@ builder.Services.AddAuthentication(options =>
         RequireExpirationTime = true,
         ValidateLifetime = true,  // Force expiration validation checks
         ClockSkew = TimeSpan.Zero // Removes the default 5-minute grace period buffer
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.StartsWithSegments("/chatHub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
     };
 });
 builder.Services.AddAuthorization();
@@ -80,5 +106,7 @@ app.UseAuthentication(); // 💂‍♂️ Guard 1: Who are you? (Extracts and va
 app.UseAuthorization();  // 💂‍♂️ Guard 2: Are you allowed in? (Checks endpoint permissions)
 app.UseStaticFiles();
 app.MapControllers();
+app.MapHub<ChatHub>("/chatHub");
+
 
 app.Run();

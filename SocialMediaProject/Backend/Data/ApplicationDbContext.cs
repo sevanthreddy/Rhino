@@ -16,16 +16,28 @@ public class ApplicationDbContext : DbContext
     .WithMany(p => p.Likes)
     .HasForeignKey(l => l.Postid);
 
-modelBuilder.Entity<Likes>()
-    .HasOne(l => l.Reply)
-    .WithMany(r => r.Likes)
-    .HasForeignKey(l => l.RepliesId);
+        modelBuilder.Entity<Likes>()
+            .HasOne(l => l.Reply)
+            .WithMany(r => r.Likes)
+            .HasForeignKey(l => l.RepliesId);
 
-    modelBuilder.Entity<Replies>()
-    .HasOne(r => r.User)
-    .WithMany()
-    .HasForeignKey(r => r.UserId)
-    .OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<Replies>()
+        .HasOne(r => r.User)
+        .WithMany()
+        .HasForeignKey(r => r.UserId)
+        .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<Follow>()
+        .HasOne(f => f.Follower).WithMany(u => u.Following).HasForeignKey(f => f.FollowerId).OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<Follow>()
+        .HasOne(f => f.Following).WithMany(u => u.Followers).HasForeignKey(f => f.FollowingId).OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<Message>()
+        .HasOne(m => m.Sender).WithMany(x => x.SentMessages).HasForeignKey(y => y.SenderId).OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<Message>()
+        .HasOne(m => m.Receiver).WithMany(x => x.ReceivedMessages).HasForeignKey(y => y.ReceiverId).OnDelete(DeleteBehavior.NoAction);
     }
 
     public DbSet<User> Users { get; set; }
@@ -36,5 +48,9 @@ modelBuilder.Entity<Likes>()
 
     public DbSet<Images> Images { get; set; }
 
-    public DbSet<Replies> Replies{get;set;}
+    public DbSet<Replies> Replies { get; set; }
+
+    public DbSet<Follow> Follow { get; set; }
+
+    public DbSet<Message> Message { get; set; }
 }

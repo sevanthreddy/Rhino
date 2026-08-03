@@ -3,6 +3,10 @@ import '../Styles/LoginandSignup.css';
 import Homepage from './Homepage';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from "react-redux";
+import { login } from "../slices/authSlice";
+import { useGlobalContext } from "../context/GlobalContext";
+
 
 function LoginandSignup() {
   const [username, setusername] = useState("");
@@ -11,12 +15,15 @@ function LoginandSignup() {
   const [loggedin, setloggedin] = useState(false);
   const [authmode, setauthmode] = useState("login");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const trial = useSelector((state) => state.auth.username);
+  const { connection,setOnlineUsers,setConnection,setUser } = useGlobalContext();
+
 
   useEffect(() => {
     const savedtoken = localStorage.getItem("token");
     if (savedtoken) {
       setloggedin(true);
-
     } else {
       setloggedin(false);
     }
@@ -43,22 +50,26 @@ function LoginandSignup() {
         if (data.token) {
           localStorage.setItem("token", data.token);
           const decodedtoken = jwtDecode(data.token);
-          console.log("decoded token", decodedtoken);
+          console.log(decodedtoken);
+
+          localStorage.setItem("userid",decodedtoken.userId);
           let username = decodedtoken.username;
-          console.log("username from token", username);
+          dispatch(login({
+            username: username,
+            token: data.token
+          }));
+          setUser(data);
           localStorage.setItem("initials", username.length >= 2
             ? username.substring(0, 2).toUpperCase()
             : username.toUpperCase());
+          localStorage.setItem("username", username);
           navigate("/home");
         } else {
-          console.log("Access Token not received Login Failed!");
           alert("Login Failed");
         }
       }
     } else {
-      console.log("username:", username);
-      console.log("email:", email);
-      console.log("password:", password);
+
       const response = await fetch("http://localhost:5040/api/RegisterandLogin/register", {
         method: "POST",
         headers: {
@@ -71,7 +82,6 @@ function LoginandSignup() {
         })
       });
       if (response.ok) {
-        console.log("Create Account Successfull");
         setauthmode("login");
       } else {
         setauthmode("Create");
@@ -97,8 +107,10 @@ function LoginandSignup() {
       <div className="flex justify-center items-center  flex-col text-white mt-32">
         <h1 className='text-2xl'>Log in to Rhino</h1>
         <form onSubmit={handleOnSubmit} className='flex justify-center items-center flex-col text-white w-full max-w-sm'>
-          {authmode === "Create" && <input onChange={(e) => {    console.log("Typing username:", e.target.value);
- setusername(e.target.value); console.log("username") }} placeholder='Enter Username' className='w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500'></input>}
+          {authmode === "Create" && <input onChange={(e) => {
+            console.log("Typing username:", e.target.value);
+            setusername(e.target.value); console.log("username")
+          }} placeholder='Enter Username' className='w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500'></input>}
           <input onChange={(e) => { setemail(e.target.value) }} placeholder='Enter Email Address or Username' className='w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500'></input>
           <input onChange={(e) => { setpassword(e.target.value) }} placeholder='password' className='w-full border border-slate-800 rounded-xl p-3 m-2 outline-none focus:border-blue-500'></input>
           <button type='submit' className='rounded-2xl  w-full p-2 m-2 bg-blue-700 hover:bg-blue-500'>{authmode === "Create" ? "Sign Up" : "Log In"}</button>

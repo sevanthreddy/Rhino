@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { FiHeart } from "react-icons/fi";
+import { FiHeart, FiShare2, FiSend, FiTrendingUp } from "react-icons/fi";
+import { FaRegComment } from "react-icons/fa";
 import { useNavigate, useParams } from 'react-router-dom';
+import CommentCard from './Commentcard';
 
 
-function PostCard({ post,onClick }) {
+function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
   const { id, username, initials, timeAgo, content, avatarColor = 'bg-blue-500', likeCount, isLiked } = post;
   var imagesRelatedtoPost = post.imagesRelatedtoPost;
   const [likecountofpost, setlikecountofpost] = useState(likeCount);
   const [liked, setliked] = useState(isLiked);
- 
+  const [commentclick, setcommentclick] = useState(false);
+
 
   const handleClickLike = async (e) => {
     e.stopPropagation();
@@ -27,14 +30,43 @@ function PostCard({ post,onClick }) {
     }
 
   }
+
+  const handleCommentClick = async (e) => {
+    e.stopPropagation();
+    oncommentclick(post);
+  }
+
+  const handleshare = async (e) => {
+    try {
+      e.stopPropagation();
+      if (navigator.share) {
+        await navigator.share({
+          title: "Post",
+          text: "Check Out this Post",
+          url: `http://localhost:5040/api/home/post/${post.id}`
+        })
+      } else {
+        console.log("Share not supported");
+      }
+    } catch(err) {
+      console.log("Share cancelled or failed", err);
+    }
+
+  }
+
+  const handleProfileClick = (e) => {
+    e.stopPropagation();
+    onProfileClick(username);
+  }
+
   return (
     <div>
-      <div  onClick={onClick} className='flex hover:bg-gray-100 border border-gray-200 p-2'>
+      <div onClick={onClick} className='flex hover:bg-gray-100 border border-gray-200 p-2'>
         {/* Profile Header Row */}
         <div className='flex'>
-          <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold`}>{initials}</div>
+          <div onClick={handleProfileClick} className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold cursor-pointer`}>{initials}</div>
         </div>
-        <div className='flex flex-col ml-1 '>
+        <div className='flex flex-col ml-1  w-full cursor-pointer'>
           <div className=' h-8'>{username}</div>
           <div>
             <div className=''>{content}</div>
@@ -50,11 +82,21 @@ function PostCard({ post,onClick }) {
                 );
               })}
           </div>
-          <div className='flex m-2'>
-            <div className='flex items-center'>{/*For Likes*/}
+          <div className='flex mt-2  w-full justify-between '>
+            <div className='flex items-center hover:text-red-500'>{/*For Likes*/}
               <FiHeart onClick={handleClickLike} className={`text-sm cursor-pointer ${liked ? "fill-red-500 text-red-500" : "hover:text-red-500"}`} />
               <p className='ml-1 text-sm'>{likecountofpost}</p>
-
+            </div>
+            <div className='flex items-center hover:text-blue-500'>
+              <FaRegComment onClick={handleCommentClick} className='text-sm cursor-pointer '></FaRegComment>
+              <p className='ml-1 text-sm'>0</p>
+            </div>
+            <div className='flex items-center hover:text-blue-500'>
+              <FiShare2 className='text-sm cursor-pointer hover:text-blue-500' onClick={handleshare}></FiShare2>
+            </div>
+            <div className='flex items-center'>
+              <FiTrendingUp className='text-sm cursor-pointer'></FiTrendingUp>
+              <p className='ml-1 text-sm'>0</p>
             </div>
           </div>
         </div>

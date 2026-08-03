@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams,useNavigate } from "react-router-dom";
 import PostCard from "./PostCard";
 import CreatePostCard from "./CreatePostCard";
+
 
 function SinglePost() {
     const { id } = useParams();
 
     const [post, setPost] = useState(null);
     const [replies, setreplies] = useState([]);
+      const navigate = useNavigate();
+
 
     useEffect(() => {
         const fetchPost = async () => {
@@ -53,10 +56,12 @@ function SinglePost() {
     };
 
 
+
+
     return (
         <div>
             {post && <PostCard post={post} />}
-            <CreatePostCard oncreate={handleCreateReplies}></CreatePostCard>
+            <CreatePostCard oncreate={handleCreateReplies} ></CreatePostCard>
             {replies && replies.map(r => <PostCard post={r}></PostCard>)}
 
         </div>
