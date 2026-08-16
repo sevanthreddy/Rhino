@@ -24,21 +24,23 @@ public class PostsController : ControllerBase
         try
         {
             var posts = await PostService.GetPostsAsync(1);
-        return posts != null ? Ok(posts) : NotFound();
-            
-        }catch(Exception e)
-        {
-            Console.WriteLine(e);
-            return BadRequest();
+
+            return posts != null ? Ok(posts) : NotFound();
         }
-        
+        catch (Exception e)
+        {
+            Console.WriteLine("ERROR IN GET POSTS:");
+            Console.WriteLine(e.ToString());
+
+            return StatusCode(500, e.Message);
+        }
     }
 
     [HttpGet("post/{id}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPostById(int id)
     {
-        var post = await PostService.GetPostByIdAsync(int.Parse(HttpContext.User.FindFirst("userId")!.Value),id);
+        var post = await PostService.GetPostByIdAsync(int.Parse(HttpContext.User.FindFirst("userId")!.Value), id);
         return post != null ? Ok(post) : NotFound();
     }
 
@@ -63,12 +65,12 @@ public class PostsController : ControllerBase
         {
             return BadRequest("postid is null");
         }
-        
-        var (Nooflikes,result) = await PostService.LikePostAsync(postid, int.Parse(HttpContext.User.FindFirst("userId")!.Value));
+
+        var (Nooflikes, result) = await PostService.LikePostAsync(postid, int.Parse(HttpContext.User.FindFirst("userId")!.Value));
         return Ok(new
         {
             likeCount = Nooflikes,
-            result=result
+            result = result
         });
     }
 
