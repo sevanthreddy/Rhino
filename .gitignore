@@ -1,0 +1,18 @@
+# .NET
+**/bin/
+**/obj/
+
+# Python
+**/__pycache__/
+**/.venv/
+**/venv/
+**/antenv/
+*.py[cod]
+
+# Node
+**/node_modules/
+**/dist/
+
+# Environment files
+.env
+.env.*
