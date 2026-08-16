@@ -6,7 +6,6 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { GlobalProvider } from './context/GlobalContext.jsx'
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from "react-redux";
-import { store } from "./CentralStore/Store";
 import LoginandSignup from "./Components/LoginandSignup";
 
 createRoot(document.getElementById('root')).render(
