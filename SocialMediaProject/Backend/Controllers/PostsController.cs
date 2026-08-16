@@ -21,8 +21,17 @@ public class PostsController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetPosts()
     {
-        var posts = await PostService.GetPostsAsync(1);
+        try
+        {
+            var posts = await PostService.GetPostsAsync(1);
         return posts != null ? Ok(posts) : NotFound();
+            
+        }catch(Exception e)
+        {
+            Console.WriteLine(e);
+            return BadRequest();
+        }
+        
     }
 
     [HttpGet("post/{id}")]
