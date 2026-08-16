@@ -10,10 +10,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+    build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -24,10 +24,10 @@ jobs:
           dotnet-version: '10.x'
 
       - name: Build with dotnet
-  run: dotnet build SocialMediaProject/Backend/Backend.csproj --configuration Release
+        run: dotnet build SocialMediaProject/Backend/Backend.csproj --configuration Release
 
       - name: dotnet publish
-  run: dotnet publish SocialMediaProject/Backend/Backend.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish SocialMediaProject/Backend/Backend.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
