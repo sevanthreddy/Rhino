@@ -138,6 +138,6 @@ app.UseAuthorization();  // 💂‍♂️ Guard 2: Are you allowed in? (Checks e
 app.UseStaticFiles();
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub");
-
+app.MapGet("/", () => "Rhino backend is running!");
 
 app.Run();
