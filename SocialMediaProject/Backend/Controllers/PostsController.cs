@@ -29,10 +29,11 @@ public class PostsController : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine("ERROR IN GET POSTS:");
-            Console.WriteLine(e.ToString());
-
-            return StatusCode(500, e.Message);
+            return StatusCode(500, new
+            {
+                error = e.Message,
+                detail = e.ToString()
+            });
         }
     }
 
