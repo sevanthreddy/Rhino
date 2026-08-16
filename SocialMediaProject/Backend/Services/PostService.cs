@@ -2,14 +2,21 @@ using Backend.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
+using Azure.Messaging.ServiceBus;
 
 public class PostService : IPostService
 {
     private readonly ApplicationDbContext _context;
 
-    public PostService(ApplicationDbContext context)
+    private readonly INotificationService _notificationService;
+
+    private readonly ServiceBusPublisher _servicebusPublisher;
+
+    public PostService(ApplicationDbContext context,INotificationService notificationService,ServiceBusPublisher serviceBusPublisher)
     {
         _context = context;
+        _notificationService=notificationService;
+        _servicebusPublisher=serviceBusPublisher;
     }
 
     public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
@@ -29,8 +36,13 @@ public class PostService : IPostService
             Username = posts.User.Username, // Access the Username from the related User entity
             LikeCount = _context.Likes.Where(p => p.Postid == posts.Id).Count(),
             IsLiked = _context.Likes.Where(p => p.Postid == posts.Id && p.Userid == userid).Any(),
-            ImagesRelatedtoPost = _context.Images.Where(i => i.postid == posts.Id).Select(i => "uploads/" + i.ImageURL).ToList()
+            ImagesRelatedtoPost = _context.Images.Where(i => i.postid == posts.Id).Select(i => "uploads/" + i.ImageURL).ToList(),
+            profileImage = posts.User.ProfileImageURL
         });
+        for(int i=0;i<datattorontend.Count();i++)
+        {
+            Console.WriteLine("profile image url", datattorontend.ElementAt(i).profileImage);
+        }
 
         return datattorontend;
     }
@@ -118,6 +130,18 @@ public class PostService : IPostService
             _context.Likes.Add(like);
 
             await _context.SaveChangesAsync();
+           
+            await _servicebusPublisher.SendAsync(new NotificationDto
+            {
+                Content="Liked Your Post",
+                Senderid=userid,
+                IsRead=false,
+                CreatedAt=DateTime.UtcNow,
+                Type="Like",
+                ReceiverId=await _context.Posts.Where(P=>P.Id==postid).Select(P=>P.UserId).FirstOrDefaultAsync()
+                
+            });
+
             int totallikes = await _context.Likes.Where(p => p.Postid == postid).CountAsync();
             return (totallikes, true);
         }

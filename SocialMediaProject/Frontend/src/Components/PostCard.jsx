@@ -3,10 +3,11 @@ import { FiHeart, FiShare2, FiSend, FiTrendingUp } from "react-icons/fi";
 import { FaRegComment } from "react-icons/fa";
 import { useNavigate, useParams } from 'react-router-dom';
 import CommentCard from './Commentcard';
+import { getApiUrl, getAssetUrl } from '../config';
 
 
 function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
-  const { id, username, initials, timeAgo, content, avatarColor = 'bg-blue-500', likeCount, isLiked } = post;
+  const { id, username, initials, timeAgo, content, avatarColor = 'bg-blue-500', likeCount, isLiked,profileImage } = post;
   var imagesRelatedtoPost = post.imagesRelatedtoPost;
   const [likecountofpost, setlikecountofpost] = useState(likeCount);
   const [liked, setliked] = useState(isLiked);
@@ -18,7 +19,7 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
     console.log("entered click like function", post.id);
     var token = localStorage.getItem("token");
     console.log(post.id);
-    const response = await fetch(`http://localhost:5040/api/Posts/like/${post.id}`, {
+    const response = await fetch(getApiUrl(`/api/Posts/like/${post.id}`), {
       method: "POST",
       headers: { "content-type": "application/json", "Authorization": `Bearer ${token}` },
     });
@@ -43,7 +44,7 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
         await navigator.share({
           title: "Post",
           text: "Check Out this Post",
-          url: `http://localhost:5040/api/home/post/${post.id}`
+          url: getApiUrl(`/api/home/post/${post.id}`)
         })
       } else {
         console.log("Share not supported");
@@ -64,7 +65,13 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
       <div onClick={onClick} className='flex hover:bg-gray-100 border border-gray-200 p-2'>
         {/* Profile Header Row */}
         <div className='flex'>
-          <div onClick={handleProfileClick} className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold cursor-pointer`}>{initials}</div>
+          <div onClick={handleProfileClick} className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold cursor-pointer`}>
+            {profileImage ? (
+              <img src={getAssetUrl(`/Uploads/${profileImage}`)} className="w-full h-full rounded-full" />
+            ) : (
+              <span>{initials}</span>
+            )}
+          </div>
         </div>
         <div className='flex flex-col ml-1  w-full cursor-pointer'>
           <div className=' h-8'>{username}</div>
@@ -75,7 +82,7 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
                 return (
                   <img
                     key={everyimage}
-                    src={`http://localhost:5040/${everyimage}`}
+                    src={getAssetUrl(`/${everyimage}`)}
                     alt="image related to the post"
                     className="w-full rounded-lg mt-2 mb-2"
                   />

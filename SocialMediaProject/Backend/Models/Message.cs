@@ -11,4 +11,6 @@ public class Message
     public DateTime SentAt{get;set;}
     public string Status{get;set;}=null!;
 
+    public string? Embedding{get;set;}=null!;
+
 }

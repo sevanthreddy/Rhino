@@ -9,6 +9,9 @@ import { MdHome, MdChat, MdLogout } from "react-icons/md";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useGlobalContext } from "../context/GlobalContext";
 import { useMediaQuery } from "react-responsive";
+import { IoNotificationsOutline } from "react-icons/io5";
+import { getApiUrl } from "../config";
+
 
 
 
@@ -27,18 +30,19 @@ function Homepage() {
   const [fold, setfold] = useState(false);
   const { connection, setOnlineUsers, setConnection, setUser } = useGlobalContext();
   const isMobile = useMediaQuery({ maxWidth: 767 });
-  const { unreadMessagesCount, setUnreadMessagesCount,setLatestMessage } = useGlobalContext();
+  const { unreadMessagesCount, setUnreadMessagesCount,setLatestMessage,notifications } = useGlobalContext();
 
 
   const fetchpostsfromdb = async () => {
     const token = localStorage.getItem("token");
-    const response = await fetch("http://localhost:5040/api/Posts", {
+    const response = await fetch(getApiUrl('/api/Posts'), {
       method: "GET",
       headers: { "Authorization": `Bearer ${token}` }
     });
 
     if (response.ok) {
       var data = await response.json();
+      console.log("fetched posts from db", data);
       setposts(data);
     } else {
       console.log("issue in fetching posts");
@@ -62,7 +66,6 @@ function Homepage() {
     setUnreadMessagesCount(0);
     setConnection(null);
     navigate("/login");
-
   }
 
   const handlehomeclick = () => {
@@ -110,7 +113,7 @@ function Homepage() {
 
     if (mode === "Post") {
       const response = await fetch(
-        "http://localhost:5040/api/Posts/create",
+        getApiUrl('/api/Posts/create'),
         {
           method: "POST",
           headers: {
@@ -134,7 +137,7 @@ function Homepage() {
 
 
       const response = await fetch(
-        "http://localhost:5040/api/ReplyTo/post",
+        getApiUrl('/api/ReplyTo/post'),
         {
           method: "POST",
           headers: {
@@ -166,9 +169,14 @@ function Homepage() {
     navigate("/home/chat");
   }
 
+  const handleNotificationsClick = () => {
+    
+    navigate("/home/notifications");
+  }
+
   return (
     <div className='h-screen w-full overflow-hidden'>
-      <div className='grid grid-cols-1 md:grid-cols-12! border border-yellow-500 h-full'>
+      <div className='grid grid-cols-1 md:grid-cols-12!  h-full '>
         {(!isMobile || !location.pathname.startsWith("/home/chat/")) && (<div className={`fixed bottom-0 left-0 right-0 md:static! flex flex-row justify-around md:flex-col! md:justify-start! rounded-xl ${fold ? "col-span-1" : "col-span-3"}`}>
           <div onClick={handlehomeclick} className='flex  flex-row items-center hover:bg-gray-100 p-3'>
             <MdHome className='mr-2 shrink-0'></MdHome>
@@ -176,7 +184,7 @@ function Homepage() {
           </div>
           <div onClick={onlogout} className='flex flex-row items-center hover:bg-gray-100 p-3'>
             <MdLogout className='mr-2 shrink-0'></MdLogout>
-            {fold == false && <button className='rounded-xl hover:bg-gray-100 '>LogOut</button>}
+            {fold == false && <button className='rounded-xl hover:bg-gray-100'>LogOut</button>}
           </div>
           <div onClick={handleChatClick} className='flex flex-row items-center hover:bg-gray-100 p-3 relative'>
             <div className="relative inline-block">
@@ -189,15 +197,24 @@ function Homepage() {
             {fold == false && <button className='rounded-xl hover:bg-gray-100'>Chat</button>}
 
           </div>
+          <div onClick={handleNotificationsClick} className='flex flex-row items-center hover:bg-gray-100 p-3'>
+            <div className='relative'>
+              <IoNotificationsOutline className='mr-2 shrink-0'></IoNotificationsOutline>
+              <div className="absolute -top-3 -right-2 bg-indigo-500 text-white text-[9px] rounded-full min-w-5  flex items-center justify-center">
+                {notifications.length>0?notifications.length:""}
+              </div>
+            </div>
+            {fold == false && <button className='rounded-xl hover:bg-gray-100'>Notifications</button>}
+          </div>
         </div>)}
-        <div className={`${fold ? "col-span-11" : "col-span-6"} h-full overflow-y-auto`}>
+        <div className={`${fold ? "col-span-11" : "col-span-6"} h-full  overflow-y-auto`}>
           {fold == false && location.pathname === "/home" && <CreatePostCard oncreate={fetchpostsfromdb} createpost={handleCreatePost}></CreatePostCard>}
           {fold == false && location.pathname === "/home" && posts.map((everypost) => (
             <PostCard key={everypost.id} onProfileClick={handleProfileClick} oncommentclick={handleCommentClick} post={everypost} onClick={() => handleClickPost(everypost.id)}></PostCard>
           ))}
           <Outlet context={{ handleCreatePost, handleCommentClick, handleProfileClick, handleClickPost }}></Outlet>
         </div>
-        {false == false && <div className='col-span-3'></div>}
+        {!location.pathname.startsWith("/home/chat") && <div className='col-span-3'></div>}
       </div>
       {isCommentClicked && <CommentCard showoriginalpost={selectedpost.content} oncreatecomment={handleCreatePost} onclose={handleclosecommentmodal}></CommentCard>}
     </div>

@@ -4,7 +4,7 @@ import EditProfileView from './EditProfileView';
 import PostCard from './PostCard';
 import { useOutletContext } from "react-router-dom";
 import { MdArrowBack } from "react-icons/md";
-
+import { getApiUrl, getAssetUrl } from "../config";
 
 
 function ProfileView() {
@@ -38,7 +38,7 @@ function ProfileView() {
             setshoweditpf(true);
             return;
         }
-        const response = await fetch(`http://localhost:5040/api/Follow/${username}`, {
+        const response = await fetch(getApiUrl(`/api/Follow/${username}`), {
             method: "POST",
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
@@ -59,7 +59,7 @@ function ProfileView() {
 
     const getUserFollowInfo = async () => {
 
-        var response = await fetch(`http://localhost:5040/api/Follow/${username}`, {
+        var response = await fetch(getApiUrl(`/api/Follow/${username}`), {
             method: "GET",
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
@@ -84,7 +84,7 @@ function ProfileView() {
     }
 
     const getAllPosts = async () => {
-        const response = await fetch(`http://localhost:5040/api/Follow/${username}/${clickedTab}`, {
+        const response = await fetch(getApiUrl(`/api/Follow/${username}/${clickedTab}`), {
             method: "GET",
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
@@ -121,7 +121,7 @@ function ProfileView() {
                     </div>
                 </div>
                 <div className='h-32 '>{/*Main Image in Profile view*/}
-                    {imageurl && <img src={`http://localhost:5040/uploads/${imageurl}`} className='w-full h-32 object-cover overflow-hidden'></img>}
+                    {imageurl && <img src={getAssetUrl(`/uploads/${imageurl}`)} className='w-full h-32 object-cover overflow-hidden'></img>}
 
                 </div>
                 <div className='flex mt-4'>{/*bar for having follow button and other stuff*/}

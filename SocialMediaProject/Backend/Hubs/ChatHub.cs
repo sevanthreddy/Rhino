@@ -75,8 +75,6 @@ public class ChatHub : Hub
     public async Task RegisterDeliveredMesssage(int messageId,int id)//id represents the person whose message has been delivered
     {
         Console.WriteLine(messageId);
-        Console.WriteLine(
-    $"Context user: {Context.User?.FindFirst("userId")?.Value}");
         var x = await _messageService.UpdateStatusAsync(messageId, "Delivered");//updating db 
         if (x)
         {

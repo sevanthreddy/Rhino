@@ -139,4 +139,19 @@ public class MessageController:ControllerBase
         }
     }
 
+    [HttpGet("search")]
+    public async Task<IActionResult> GetSearchResults(string searchTerm)
+    {
+        try
+        {
+            Console.WriteLine("search term in controller:", searchTerm);
+            var results = await _messageService.GetSearchResultsAsync(searchTerm, int.Parse(HttpContext.User.FindFirst("userId")!.Value));
+            return Ok(results);
+        }
+        catch
+        {
+            return BadRequest(0);
+        }
+    }
+
 }

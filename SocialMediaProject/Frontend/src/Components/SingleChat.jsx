@@ -5,7 +5,7 @@ import * as signalR from "@microsoft/signalr";
 import { MdSend } from "react-icons/md";
 import { MdArrowBack, MdDone, MdDoneAll } from "react-icons/md";
 import { useGlobalContext } from "../context/GlobalContext";
-
+import { getApiUrl } from "../config";
 
 
 
@@ -47,7 +47,7 @@ function SingleChat() {
             if (latestMessage.senderId === Number(userid)) {
 
                 const response = await fetch(
-                    `http://localhost:5040/api/Message/updateAll/${userid}`,
+                    getApiUrl(`/api/Message/updateAll/${userid}`),
                     {
                         method: "POST",
                         headers: {
@@ -129,13 +129,13 @@ function SingleChat() {
     const getmessages = async () => {
         // fetch conversation here
         console.log("getmessages called");
-        const response = await fetch(`http://localhost:5040/api/Message/${userid}`, {
+        const response = await fetch(getApiUrl(`/api/Message/${userid}`), {
             method: "GET",
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });
         if (response.ok) {
             var data = await response.json();
-            const response2 = await fetch(`http://localhost:5040/api/Message/updateAll/${userid}`, {
+            const response2 = await fetch(getApiUrl(`/api/Message/updateAll/${userid}`), {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
             });
@@ -188,7 +188,7 @@ function SingleChat() {
 
         const oldestMessageId = messagesRef.current[0].messageId;
 
-        const response = await fetch(`http://localhost:5040/api/Message/${userid}?lastmessageid=${oldestMessageId}`, {
+        const response = await fetch(`${getApiUrl(`/api/Message/${userid}`)}?lastmessageid=${oldestMessageId}`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
         });

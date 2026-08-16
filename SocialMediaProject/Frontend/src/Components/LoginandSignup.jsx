@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../slices/authSlice";
 import { useGlobalContext } from "../context/GlobalContext";
+import { getApiUrl } from "../config";
 
 
 function LoginandSignup() {
@@ -32,7 +33,7 @@ function LoginandSignup() {
   const handleOnSubmit = async (e) => {
     e.preventDefault();
     if (authmode === "login") {
-      const response = await fetch("http://localhost:5040/api/RegisterandLogin/login", {
+      const response = await fetch(getApiUrl('/api/RegisterandLogin/login'), {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -70,7 +71,7 @@ function LoginandSignup() {
       }
     } else {
 
-      const response = await fetch("http://localhost:5040/api/RegisterandLogin/register", {
+      const response = await fetch(getApiUrl('/api/RegisterandLogin/register'), {
         method: "POST",
         headers: {
           "content-type": "application/json"

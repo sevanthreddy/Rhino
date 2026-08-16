@@ -9,6 +9,7 @@ import SinglePost from './Components/SinglePost';
 import ProfileView from './Components/ProfileView';
 import ChatView from './Components/ChatView';
 import SingleChat from './Components/SingleChat';
+import NotificationsView from './Components/NotificationsView';
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path=":userid" element={<SingleChat></SingleChat>}></Route>
 
         </Route>
+        <Route path="notifications" element={<NotificationsView></NotificationsView>}></Route>
 
         <Route path="post/:id" element={<SinglePost />} />
         <Route path=":username" element={<ProfileView></ProfileView>} />

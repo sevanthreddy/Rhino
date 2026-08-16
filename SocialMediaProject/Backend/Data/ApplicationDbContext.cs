@@ -38,6 +38,18 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Message>()
         .HasOne(m => m.Receiver).WithMany(x => x.ReceivedMessages).HasForeignKey(y => y.ReceiverId).OnDelete(DeleteBehavior.NoAction);
+
+         modelBuilder.Entity<Notifications>()
+        .HasOne(n => n.Sender)
+        .WithMany()
+        .HasForeignKey(n => n.Senderid)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    modelBuilder.Entity<Notifications>()
+        .HasOne(n => n.Receiver)
+        .WithMany()
+        .HasForeignKey(n => n.ReceiverId)
+        .OnDelete(DeleteBehavior.Restrict);
     }
 
     public DbSet<User> Users { get; set; }
@@ -53,4 +65,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<Follow> Follow { get; set; }
 
     public DbSet<Message> Message { get; set; }
+
+    public DbSet<Notifications> Notifications{get;set;}
 }

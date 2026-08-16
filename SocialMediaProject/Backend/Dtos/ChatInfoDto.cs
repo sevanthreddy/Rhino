@@ -4,6 +4,8 @@ public class ChatInfoDto
 
     public int userid{get;set;}
 
-    public string status{get;set;}
+    public string? ProfilePicture{get;set;}
+
+    
     
 }

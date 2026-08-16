@@ -19,4 +19,6 @@ public class PostDto
     public bool IsLiked { get; set; } = false;
 
     public List<string> ImagesRelatedtoPost { get; set; } = null!;
+
+    public string? profileImage { get; set; } = null!;
 }

@@ -7,11 +7,19 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+
+using Azure.Messaging.ServiceBus;
+using Azure.Identity;
+using Azure.Core;
+
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // === PHASE 1: REGISTER SERVICES (Must be BEFORE builder.Build()) ===
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -27,20 +35,43 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Enter the JWT token. Swagger will add the 'Bearer ' prefix."
     });
 });
+builder.Services.AddSingleton<ServiceBusClient>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
 
+    var namespaceName = configuration["ServiceBus:Namespace"]!;
+
+    TokenCredential credential;
+
+    if (builder.Environment.IsDevelopment())
+    {
+        credential = new AzureCliCredential();
+    }
+    else
+    {
+        credential = new ManagedIdentityCredential();
+    }
+
+    return new ServiceBusClient(namespaceName, credential);
+});
+builder.Services.AddHostedService<ServicebusReceiver>();
+builder.Services.AddSingleton<ServiceBusPublisher>();
 builder.Services.AddScoped<IAuthService,AuthService>();
 builder.Services.AddScoped<IPostService,PostService>();
 builder.Services.AddScoped<IReplyService,ReplyService>();
 builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<IProfileService,ProfileService>();
 builder.Services.AddScoped<IMessageService,MessageService>();
+builder.Services.AddScoped<INotificationService,NotificationService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddSingleton<IPresenceService,PresenceService>();
-;builder.Services.AddCors(options =>
+builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Your React app's Vite address
+        var frontendOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:5173" };
+
+        policy.WithOrigins(frontendOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

@@ -12,5 +12,7 @@ public interface IMessageService
 
     Task<IEnumerable<int>> UpdateStatusAllAsync(int senderid, int receiverid);
 
-    Task<int> GetUnreadMessagesAsync(int userid);
+    Task<IEnumerable<int>> GetUnreadMessagesAsync(int userid);
+
+    Task<IEnumerable<SearchResultDto>> GetSearchResultsAsync(string searchTerm, int mainid);
 }

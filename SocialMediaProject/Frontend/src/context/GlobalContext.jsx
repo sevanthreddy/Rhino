@@ -1,6 +1,7 @@
 console.log("GlobalProvider rendered");
 import { createContext, useContext, useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
+import { getApiUrl } from "../config";
 
 const GlobalContext = createContext();
 
@@ -11,11 +12,13 @@ export function GlobalProvider({ children }) {
         const [conversations, setConversations] = useState([]);
         const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
         const [latestMessage, setLatestMessage] = useState(null);
+        const [listofNewMessageSenders, setListofNewMessageSenders] = useState([]);
+        const [notifications, setnotifications] = useState([]);
 
 
         const getUnreadMessagesCount = async () => {
                 console.log("getUnreadMessagesCount method started");
-                const response = await fetch('http://localhost:5040/api/Message/unread', {
+                const response = await fetch(getApiUrl('/api/Message/unread'), {
                         method: 'GET',
                         headers: {
                                 'Authorization': `Bearer ${localStorage.getItem("token")}`
@@ -24,9 +27,30 @@ export function GlobalProvider({ children }) {
                 if (response.ok) {
                         var data = await response.json();
                         console.log("unread messages count:", data);
-                        setUnreadMessagesCount(data);
+                        setUnreadMessagesCount(data.length);
+                        setListofNewMessageSenders(data);
                 }
                 console.log("getUnreadMessagesCount method ended");
+        };
+
+        const handleNotification = async () => {
+                const token = localStorage.getItem("token");
+                const response = await fetch(getApiUrl('/api/Notifications/getall'), {
+                        method: "GET",
+                        headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (response.ok) {
+                        var data = await response.json();
+                        console.log("notifications", data);
+                        setnotifications(data);
+                }
+        };
+
+        const handlenewNotification = (notification) => {
+                setnotifications(prev => [
+                        notification,
+                        ...prev
+                ]);
         };
 
 
@@ -34,6 +58,7 @@ export function GlobalProvider({ children }) {
         useEffect(() => {
                 console.log("Token:", localStorage.getItem("token"));
                 getUnreadMessagesCount();
+                handleNotification();
         }, [user]);
 
         useEffect(() => {
@@ -43,7 +68,7 @@ export function GlobalProvider({ children }) {
                 console.log("running global context after token line");
 
                 const newConnection = new signalR.HubConnectionBuilder()
-                        .withUrl("http://localhost:5040/chatHub", {
+                        .withUrl(getApiUrl('/chatHub'), {
                                 accessTokenFactory: () => localStorage.getItem("token")
                         })
                         .withAutomaticReconnect()
@@ -81,7 +106,7 @@ export function GlobalProvider({ children }) {
                                         message.senderId
                                 );
                                 console.log("Registering read message");
-                                
+
                         }
 
                 };
@@ -91,6 +116,7 @@ export function GlobalProvider({ children }) {
                         newConnection.on("UserOnline", handleUserOnline);
                         newConnection.on("UserOffline", handleUserOffline);
                         newConnection.on("ReceiveMessage", receiveMessage);
+                        newConnection.on("ReceiveNotification", handlenewNotification);
 
                         await newConnection.start();
 
@@ -106,6 +132,7 @@ export function GlobalProvider({ children }) {
                         newConnection.off("AllUsers", handleOnlineUsers);
                         newConnection.off("UserOffline", handleUserOffline);
                         newConnection.off("ReceiveMessage", receiveMessage);
+                        newConnection.off("ReceiveNotification", handlenewNotification);
                         newConnection.stop();
                 };
         }, [user]);
@@ -123,8 +150,10 @@ export function GlobalProvider({ children }) {
                                 latestMessage,
                                 getUnreadMessagesCount,
                                 setUnreadMessagesCount,
-                                setLatestMessage
-                                
+                                setLatestMessage,
+                                listofNewMessageSenders,
+                                notifications
+
                         }}
                 >
                         {children}
