@@ -167,11 +167,11 @@ function ChatView() {
                 <div
                     className={`${userid
                             ? "col-span-12"
-                            : "hidden md:block"
+                            : "hidden md:block!"
                         } md:col-span-9! h-full min-h-0 md:border md:border-gray-200`}
                 >{/*section for showing selected chat*/}
                     <Outlet context={{ selecteduser, fetchallchats }} />
-                    {location.pathname == '/home/chat' && <div className="hidden md:flex! h-full items-center justify-center">
+                    {location.pathname == '/home/chat' && <div className=" flex h-full items-center justify-center">
                         <div className="flex flex-col items-center">
                             <HiOutlineChatAlt2 className='mb-4'></HiOutlineChatAlt2>
                             <button onClick={handleStartChat} className="hover:bg-gray-200 p-2 bg-gray-100 cursor-pointer rounded-xl">Start A Chat</button>
