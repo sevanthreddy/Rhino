@@ -21,7 +21,7 @@ public class PostsController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetPosts()
     {
-        var posts = await PostService.GetPostsAsync(int.Parse(HttpContext.User.FindFirst("userId")!.Value));
+        var posts = await PostService.GetPostsAsync(1);
         return posts != null ? Ok(posts) : NotFound();
     }
 
