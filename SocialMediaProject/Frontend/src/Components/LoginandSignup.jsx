@@ -4,7 +4,7 @@ import Homepage from './Homepage';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../slices/authSlice";
+import { login } from "../slices/AuthSlice";
 import { useGlobalContext } from "../context/GlobalContext";
 import { getApiUrl } from "../config";
 
