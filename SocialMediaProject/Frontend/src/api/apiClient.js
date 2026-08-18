@@ -12,6 +12,7 @@ export const apiFetch = async (path, options = {}) => {
         ...options,
         headers,
     });
+    console.log(response);
 
     if (response.status === 401) {
         console.log("refresh access token method started")

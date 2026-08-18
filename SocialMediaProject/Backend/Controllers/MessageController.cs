@@ -115,7 +115,7 @@ public class MessageController:ControllerBase
             }
             else
             {
-                return BadRequest(response);
+                return Ok(response);
             }
         }
         catch(Exception e)
