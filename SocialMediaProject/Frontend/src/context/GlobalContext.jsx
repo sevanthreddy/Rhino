@@ -2,6 +2,7 @@ console.log("GlobalProvider rendered");
 import { createContext, useContext, useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import { getApiUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 const GlobalContext = createContext();
 
@@ -18,11 +19,8 @@ export function GlobalProvider({ children }) {
 
         const getUnreadMessagesCount = async () => {
                 console.log("getUnreadMessagesCount method started");
-                const response = await fetch(getApiUrl('/api/Message/unread'), {
-                        method: 'GET',
-                        headers: {
-                                'Authorization': `Bearer ${localStorage.getItem("token")}`
-                        }
+                const response = await apiFetch('/api/Message/unread', {
+                        method: 'GET'
                 });
                 if (response.ok) {
                         var data = await response.json();
@@ -35,7 +33,7 @@ export function GlobalProvider({ children }) {
 
         const handleNotification = async () => {
                 const token = localStorage.getItem("token");
-                const response = await fetch(getApiUrl('/api/Notifications/getall'), {
+                const response = await apiFetch('/api/Notifications/getall', {
                         method: "GET",
                         headers: { "Authorization": `Bearer ${token}` }
                 });

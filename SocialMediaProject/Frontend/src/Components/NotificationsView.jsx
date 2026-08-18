@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaHeart } from "react-icons/fa";
-import { getApiUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 
@@ -10,7 +10,7 @@ function NotificationsView() {
     const fetchallNotifications = async () => {
         console.log("fetchallnotifications method started");
         const token = localStorage.getItem("token");
-        const response = await fetch(getApiUrl('/api/Notifications/getall'), {
+        const response = await apiFetch('/api/Notifications/getall', {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` }
         });

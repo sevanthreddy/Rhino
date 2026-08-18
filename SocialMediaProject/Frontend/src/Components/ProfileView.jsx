@@ -4,7 +4,8 @@ import EditProfileView from './EditProfileView';
 import PostCard from './PostCard';
 import { useOutletContext } from "react-router-dom";
 import { MdArrowBack } from "react-icons/md";
-import { getApiUrl, getAssetUrl } from "../config";
+import { getAssetUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 function ProfileView() {
@@ -38,9 +39,8 @@ function ProfileView() {
             setshoweditpf(true);
             return;
         }
-        const response = await fetch(getApiUrl(`/api/Follow/${username}`), {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        const response = await apiFetch(`/api/Follow/${username}`, {
+            method: "POST"
         });
         if (response.ok) {
             console.log("response is 200")
@@ -59,9 +59,8 @@ function ProfileView() {
 
     const getUserFollowInfo = async () => {
 
-        var response = await fetch(getApiUrl(`/api/Follow/${username}`), {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        var response = await apiFetch(`/api/Follow/${username}`, {
+            method: "GET"
         });
         if (response.ok) {
             var data = await response.json();
@@ -84,9 +83,8 @@ function ProfileView() {
     }
 
     const getAllPosts = async () => {
-        const response = await fetch(getApiUrl(`/api/Follow/${username}/${clickedTab}`), {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        const response = await apiFetch(`/api/Follow/${username}/${clickedTab}`, {
+            method: "GET"
         });
         if (response.ok) {
             var data = await response.json();

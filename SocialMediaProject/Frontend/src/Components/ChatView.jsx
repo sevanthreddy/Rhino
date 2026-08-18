@@ -4,7 +4,8 @@ import { MdHome, MdChat, MdLogout } from "react-icons/md";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { FiX } from "react-icons/fi";
 import { useGlobalContext } from "../context/GlobalContext";
-import { getApiUrl, getAssetUrl } from "../config";
+import { getAssetUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 
@@ -57,9 +58,8 @@ function ChatView() {
     }, [onlineUsers]);
 
     const fetchallchats = async () => {
-        const response = await fetch(getApiUrl('/api/Message/chats'), {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        const response = await apiFetch('/api/Message/chats', {
+            method: "GET"
         });
         if (response.ok) {
             var data = await response.json();
@@ -86,9 +86,8 @@ function ChatView() {
 
     const handleStartChat = async () => {
         setshowpeople(true);
-        const response = await fetch(getApiUrl('/api/Message/users'), {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        const response = await apiFetch('/api/Message/users', {
+            method: "GET"
         });
         if (response.ok) {
             var data = await response.json();
@@ -109,9 +108,8 @@ function ChatView() {
             fetchallchats();
             return;
         }
-        const response = await fetch(`${getApiUrl('/api/Message/search')}?searchTerm=${searchTerm}`, {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        const response = await apiFetch(`/api/Message/search?searchTerm=${encodeURIComponent(searchTerm)}`, {
+            method: "GET"
         });
         if (response.ok) {
             var data = await response.json();

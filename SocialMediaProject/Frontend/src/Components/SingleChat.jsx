@@ -5,7 +5,7 @@ import * as signalR from "@microsoft/signalr";
 import { MdSend } from "react-icons/md";
 import { MdArrowBack, MdDone, MdDoneAll } from "react-icons/md";
 import { useGlobalContext } from "../context/GlobalContext";
-import { getApiUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 
@@ -46,15 +46,9 @@ function SingleChat() {
             // Only incoming messages should be marked as read
             if (latestMessage.senderId === Number(userid)) {
 
-                const response = await fetch(
-                    getApiUrl(`/api/Message/updateAll/${userid}`),
-                    {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem("token")}`
-                        }
-                    }
-                );
+                const response = await apiFetch(`/api/Message/updateAll/${userid}`, {
+                    method: "POST"
+                });
 
                 if (response.ok) {
                     await getUnreadMessagesCount();
@@ -129,15 +123,13 @@ function SingleChat() {
     const getmessages = async () => {
         // fetch conversation here
         console.log("getmessages called");
-        const response = await fetch(getApiUrl(`/api/Message/${userid}`), {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        const response = await apiFetch(`/api/Message/${userid}`, {
+            method: "GET"
         });
         if (response.ok) {
             var data = await response.json();
-            const response2 = await fetch(getApiUrl(`/api/Message/updateAll/${userid}`), {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+            const response2 = await apiFetch(`/api/Message/updateAll/${userid}`, {
+                method: "POST"
             });
             if (response2.ok) {
                 var data2 = await response2.json();
@@ -188,9 +180,8 @@ function SingleChat() {
 
         const oldestMessageId = messagesRef.current[0].messageId;
 
-        const response = await fetch(`${getApiUrl(`/api/Message/${userid}`)}?lastmessageid=${oldestMessageId}`, {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        const response = await apiFetch(`/api/Message/${userid}?lastmessageid=${oldestMessageId}`, {
+            method: "GET"
         });
 
         if (response.ok) {

@@ -10,7 +10,7 @@ import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useGlobalContext } from "../context/GlobalContext";
 import { useMediaQuery } from "react-responsive";
 import { IoNotificationsOutline } from "react-icons/io5";
-import { getApiUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 
@@ -30,12 +30,12 @@ function Homepage() {
   const [fold, setfold] = useState(false);
   const { connection, setOnlineUsers, setConnection, setUser } = useGlobalContext();
   const isMobile = useMediaQuery({ maxWidth: 767 });
-  const { unreadMessagesCount, setUnreadMessagesCount,setLatestMessage,notifications } = useGlobalContext();
+  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, notifications } = useGlobalContext();
 
 
   const fetchpostsfromdb = async () => {
     const token = localStorage.getItem("token");
-    const response = await fetch(getApiUrl('/api/Posts'), {
+    const response = await apiFetch(('/api/Posts'), {
       method: "GET",
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -112,16 +112,13 @@ function Homepage() {
     }
 
     if (mode === "Post") {
-      const response = await fetch(
-        getApiUrl('/api/Posts/create'),
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await apiFetch('/api/Posts/create', {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (response.ok) {
         fetchpostsfromdb();
@@ -136,16 +133,13 @@ function Homepage() {
       }
 
 
-      const response = await fetch(
-        getApiUrl('/api/ReplyTo/post'),
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await apiFetch('/api/ReplyTo/post', {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (response.ok) {
         console.log("reply successfull");
@@ -170,7 +164,7 @@ function Homepage() {
   }
 
   const handleNotificationsClick = () => {
-    
+
     navigate("/home/notifications");
   }
 
@@ -201,7 +195,7 @@ function Homepage() {
             <div className='relative'>
               <IoNotificationsOutline className='mr-2 shrink-0'></IoNotificationsOutline>
               <div className="absolute -top-3 -right-2 bg-indigo-500 text-white text-[9px] rounded-full min-w-5  flex items-center justify-center">
-                {notifications.length>0?notifications.length:""}
+                {notifications.length > 0 ? notifications.length : ""}
               </div>
             </div>
             {fold == false && <button className='rounded-xl hover:bg-gray-100'>Notifications</button>}

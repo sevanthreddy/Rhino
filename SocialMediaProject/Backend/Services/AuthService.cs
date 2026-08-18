@@ -82,7 +82,7 @@ public class AuthService : IAuthService
 
         var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
         claims: claims,
-        expires: DateTime.UtcNow.AddHours(1),
+        expires: DateTime.UtcNow.AddMinutes(15),
         signingCredentials: creds);
         var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
         return tokenHandler.WriteToken(token);
@@ -138,7 +138,7 @@ public class AuthService : IAuthService
         }
 
         // 2. Pull the User ID (NameIdentifier) claim out of that token
-        var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = principal.FindFirst("userId")?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int id))
         {
             return (false, "Invalid token claims data.", null, null);
@@ -158,12 +158,12 @@ public class AuthService : IAuthService
         string newRefreshToken = GenerateRefreshToken();
 
         // 6. Token Rotation: Update the database with the new refresh token for the next cycle
-        user.RefreshToken = newRefreshToken;
+        user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
         await _context.SaveChangesAsync();
 
-        return (true, "Token renewed successfully!", newAccessToken, newRefreshToken);
+        return (true, "Token renewed successfully!", newAccessToken, refreshToken);
     }
 
 

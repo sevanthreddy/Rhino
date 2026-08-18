@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../Slices/AuthSlice";
 import { useGlobalContext } from "../context/GlobalContext";
-import { getApiUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 function LoginandSignup() {
@@ -33,11 +33,10 @@ function LoginandSignup() {
   const handleOnSubmit = async (e) => {
     e.preventDefault();
     if (authmode === "login") {
-      const response = await fetch(getApiUrl('/api/RegisterandLogin/login'), {
+      const response = await apiFetch('/api/RegisterandLogin/login', {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
         },
         body: JSON.stringify({
           Identifier: email,
@@ -50,6 +49,7 @@ function LoginandSignup() {
         console.log("Login Successfull");
         if (data.token) {
           localStorage.setItem("token", data.token);
+          localStorage.setItem("refreshtoken",data.refreshToken);
           const decodedtoken = jwtDecode(data.token);
           console.log(decodedtoken);
 
@@ -71,7 +71,7 @@ function LoginandSignup() {
       }
     } else {
 
-      const response = await fetch(getApiUrl('/api/RegisterandLogin/register'), {
+      const response = await apiFetch('/api/RegisterandLogin/register', {
         method: "POST",
         headers: {
           "content-type": "application/json"

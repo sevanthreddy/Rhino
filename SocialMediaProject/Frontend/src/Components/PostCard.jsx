@@ -3,7 +3,8 @@ import { FiHeart, FiShare2, FiSend, FiTrendingUp } from "react-icons/fi";
 import { FaRegComment } from "react-icons/fa";
 import { useNavigate, useParams } from 'react-router-dom';
 import CommentCard from './Commentcard';
-import { getApiUrl, getAssetUrl } from '../config';
+import { getAssetUrl } from '../config';
+import { apiFetch } from '../api/apiClient';
 
 
 function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
@@ -19,9 +20,9 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
     console.log("entered click like function", post.id);
     var token = localStorage.getItem("token");
     console.log(post.id);
-    const response = await fetch(getApiUrl(`/api/Posts/like/${post.id}`), {
+    const response = await apiFetch(`/api/Posts/like/${post.id}`, {
       method: "POST",
-      headers: { "content-type": "application/json", "Authorization": `Bearer ${token}` },
+      headers: { "content-type": "application/json" },
     });
     var data = await response.json()
     console.log(data);

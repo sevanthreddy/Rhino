@@ -56,6 +56,36 @@ public class RegisterandLoginController : ControllerBase
         return Ok(new { Message = message, Token = token, RefreshToken = refreshToken });
     }
 
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RefreshAccessToken(string accesstoken, string refreshtoken)
+    {
+        try
+        {
+            var res = await _authService.RefreshTokenAsync(accesstoken, refreshtoken);
+            if (res.Success == true)
+            {
+                return Ok(new
+                {
+                    success = res.Success,
+                    message = res.Message,
+                    newAccessToken = res.NewAccessToken,
+                    refreshToken = res.NewRefreshToken
+                });
+            }
+            else
+            {
+                return BadRequest(res);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return BadRequest();
+        }
+
+    }
+
     [HttpPost("google-login")]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
     {

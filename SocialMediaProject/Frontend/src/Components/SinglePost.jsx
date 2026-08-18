@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams,useNavigate } from "react-router-dom";
 import PostCard from "./PostCard";
 import CreatePostCard from "./CreatePostCard";
-import { getApiUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 function SinglePost() {
@@ -16,7 +16,7 @@ function SinglePost() {
     useEffect(() => {
         const fetchPost = async () => {
             var token = localStorage.getItem("token");
-            const response = await fetch(getApiUrl(`/api/Posts/post/${id}`), {
+            const response = await apiFetch(`/api/Posts/post/${id}`, {
                 method: "GET",
                 headers: { "Authorization": `Bearer ${token}` }
             });
@@ -33,14 +33,11 @@ function SinglePost() {
     const getallreplies = async () => {
         var token = localStorage.getItem("token");
 
-        const response = await fetch(
-            getApiUrl(`/api/ReplyTo/Replies/${id}`),
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
+        const response = await apiFetch(`/api/ReplyTo/Replies/${id}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
 
         if (response.ok) {
             const data = await response.json();

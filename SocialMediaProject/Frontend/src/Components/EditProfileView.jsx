@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import { HiCamera } from "react-icons/hi";
 import { useRef } from "react";
-import { getApiUrl } from "../config";
+import { apiFetch } from "../api/apiClient";
 
 
 
@@ -38,9 +38,8 @@ function EditProfileView({ onclose }) {
         formdata.append("Name", profileData.name);
         formdata.append("Bio", profileData.bio);
         formdata.append("profileimage", selectedfile);
-        const response = await fetch(getApiUrl('/api/Profile/Save'), {
+        const response = await apiFetch('/api/Profile/Save', {
             method: "POST",
-            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
             body: formdata
         });
     }
