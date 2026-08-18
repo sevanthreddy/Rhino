@@ -8,15 +8,23 @@ using Microsoft.EntityFrameworkCore;
 public class MessageService : IMessageService
 {
     private readonly ApplicationDbContext _context;
-    public MessageService(ApplicationDbContext applicationDbContext)
+
+    private readonly IConfiguration _configuration;
+
+    public MessageService(ApplicationDbContext applicationDbContext,IConfiguration configuration)
     {
         _context = applicationDbContext;
+        _configuration=configuration;
     }
     public async Task<MessageDto> CreateMessageAsync(int senderid, string content, int receiverid)
     {
         try
         {
-            var embeddingJson = await GenerateEmbeddingAsync(content);
+            string? embeddingJson = null;
+            if ( _configuration.GetValue<bool>("enableEmbeddings"))
+            {
+                embeddingJson = await GenerateEmbeddingAsync(content);
+            }
             var r = await _context.Message.AddAsync(new Message
             {
                 Content = content,
