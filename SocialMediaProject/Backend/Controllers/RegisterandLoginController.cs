@@ -84,7 +84,7 @@ public class RegisterandLoginController : ControllerBase
        new CookieOptions
        {
            HttpOnly = true,
-           Secure = false, // localhost
+           Secure = true, // localhost
            SameSite = SameSiteMode.None,
            Expires = DateTimeOffset.UtcNow.AddDays(7),
            Path = "/"
