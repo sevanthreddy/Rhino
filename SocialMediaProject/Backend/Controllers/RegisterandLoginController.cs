@@ -85,7 +85,7 @@ public class RegisterandLoginController : ControllerBase
        {
            HttpOnly = true,
            Secure = false, // localhost
-           SameSite = SameSiteMode.Lax,
+           SameSite = SameSiteMode.None,
            Expires = DateTimeOffset.UtcNow.AddDays(7),
            Path = "/"
        }
