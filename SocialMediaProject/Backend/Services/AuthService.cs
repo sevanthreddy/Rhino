@@ -128,43 +128,62 @@ public class AuthService : IAuthService
             return null; // Return null if the token structure is completely corrupted or fake
         }
     }
-    public async Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)> RefreshTokenAsync(string expiredAccessToken, string refreshToken)
+    
+    public async Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)>RefreshTokenAsync(string refreshToken)
     {
-        // 1. Decode the expired token to read who the user claims to be
-        var principal = GetPrincipalFromExpiredToken(expiredAccessToken);
-        if (principal == null)
+        var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
+
+        if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
         {
-            return (false, "Invalid access token structure.", null, null);
+            return (
+                false,
+                "Invalid or expired refresh token session. Please log in again.",
+                null,
+                null
+            );
         }
 
-        // 2. Pull the User ID (NameIdentifier) claim out of that token
-        var userIdClaim = principal.FindFirst("userId")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int id))
-        {
-            return (false, "Invalid token claims data.", null, null);
-        }
-
-        // 3. Look up this specific user in the database
-        var user = await _context.Users.FindAsync(id);
-
-        // 4. THE SECURITY GATE: Validate the refresh token string and expiration timestamp
-        if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-        {
-            return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
-        }
-
-        // 5. SUCCESS! Generate a brand new pair of tokens
         string newAccessToken = GenerateJwtToken(user);
         string newRefreshToken = GenerateRefreshToken();
 
-        // 6. Token Rotation: Update the database with the new refresh token for the next cycle
-        user.RefreshToken = refreshToken;
+        // Rotate refresh token
+        user.RefreshToken = newRefreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
         await _context.SaveChangesAsync();
 
-        return (true, "Token renewed successfully!", newAccessToken, refreshToken);
+        return (
+            true,
+            "Token renewed successfully!",
+            newAccessToken,
+            newRefreshToken
+        );
     }
 
+   public async Task<bool> RevokeRefreshTokenAsync(string refreshToken)
+{
+    try
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
 
+        if (user == null)
+        {
+            return false;
+        }
+
+        // Revoke the refresh token by clearing token and resetting expiry to a past value
+        user.RefreshToken = null;
+        user.RefreshTokenExpiryTime = DateTime.MinValue;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+}
 }

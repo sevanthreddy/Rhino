@@ -1,9 +1,33 @@
 import { getApiUrl } from "../config";
 
-export const apiFetch = async (path, options = {}) => {
-    let token = localStorage.getItem("token");
-    let headers = { ...(options.headers || {}) };
+let token = null;
+let updateGlobalToken = null;
 
+// Setting the access token inside apiClient
+export const setToken = (newToken) => {
+    console.log("apiClient token being set:", newToken);
+    token = newToken;
+};
+
+// Allows apiClient to update GlobalContext when refresh happens
+export const setTokenUpdater = (callback) => {
+    updateGlobalToken = callback;
+};
+
+// Get current token if needed elsewhere
+export const getToken = () => {
+    return token;
+};
+
+export const apiFetch = async (path, options = {}) => {
+
+    console.log("apiFetch token:", token);
+
+    let headers = {
+        ...(options.headers || {})
+    };
+
+    // Add access token to request
     if (token) {
         headers.Authorization = `Bearer ${token}`;
     }
@@ -11,39 +35,69 @@ export const apiFetch = async (path, options = {}) => {
     let response = await fetch(getApiUrl(path), {
         ...options,
         headers,
+        credentials: "include"
     });
-    console.log(response);
 
+    /*
+     * We are leaving your refresh logic here for now.
+     * Later we can improve the refresh flow.
+     */
     if (response.status === 401) {
-        console.log("refresh access token method started")
-        const refreshToken = localStorage.getItem("refreshtoken");
+
+        console.log("refresh access token api started");
 
         const refreshResponse = await fetch(
-            getApiUrl(
-                `/api/RegisterandLogin/refresh?accesstoken=${encodeURIComponent(token)}&refreshtoken=${encodeURIComponent(refreshToken)}`
-            ),
+            getApiUrl("/api/RegisterandLogin/refresh"),
             {
-                method: "POST"
+                method: "POST",
+                credentials: "include"
             }
         );
 
-        if (refreshResponse.ok) {
-            const data = await refreshResponse.json();
-            console.log(data);
+        console.log(
+            "refresh response status:",
+            refreshResponse.status
+        );
 
-            // New access token
+        if (refreshResponse.ok) {
+
+            const data = await refreshResponse.json();
+
+            console.log("refresh data:", data);
+
             const newAccessToken = data.newAccessToken;
-            localStorage.setItem("token",newAccessToken);
+
+            // Update apiClient token
+            token = newAccessToken;
+
+            console.log(
+                "apiClient token updated after refresh:",
+                token
+            );
+
+            // Update GlobalContext
+            if (updateGlobalToken) {
+                updateGlobalToken(newAccessToken);
+            }
+
+            // Retry original request
             headers.Authorization = `Bearer ${newAccessToken}`;
-            // Retry the original request
+
             response = await fetch(getApiUrl(path), {
                 ...options,
                 headers,
+                credentials: "include"
             });
+
         } else {
-            // Refresh token is expired/invalid
-            // Log the user out
+
             console.log("Session expired");
+
+            token = null;
+
+            if (updateGlobalToken) {
+                updateGlobalToken(null);
+            }
         }
     }
 

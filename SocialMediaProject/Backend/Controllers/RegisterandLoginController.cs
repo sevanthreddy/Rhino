@@ -52,19 +52,44 @@ public class RegisterandLoginController : ControllerBase
         {
             return BadRequest(message);
         }
+        Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/api/RegisterandLogin/refresh",
+            Expires = DateTimeOffset.UtcNow.AddDays(7)
+        });
 
-        return Ok(new { Message = message, Token = token, RefreshToken = refreshToken });
+        return Ok(new { Message = message, Token = token });
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> RefreshAccessToken(string accesstoken, string refreshtoken)
+    public async Task<IActionResult> RefreshAccessToken()
     {
         try
         {
-            var res = await _authService.RefreshTokenAsync(accesstoken, refreshtoken);
+            var refreshtoken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshtoken))
+            {
+                return Unauthorized("Refresh token not found.");
+            }
+            var res = await _authService.RefreshTokenAsync(refreshtoken);
             if (res.Success == true)
             {
+                Response.Cookies.Append(
+       "refreshToken",
+       res.NewRefreshToken!,
+       new CookieOptions
+       {
+           HttpOnly = true,
+           Secure = false, // localhost
+           SameSite = SameSiteMode.Lax,
+           Expires = DateTimeOffset.UtcNow.AddDays(7),
+           Path = "/"
+       }
+   );
                 return Ok(new
                 {
                     success = res.Success,
@@ -86,6 +111,27 @@ public class RegisterandLoginController : ControllerBase
 
     }
 
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var refreshToken = Request.Cookies["refreshToken"];
+        // Revoke refresh token in database here
+        if (!string.IsNullOrEmpty(refreshToken))
+        {
+            await _authService.RevokeRefreshTokenAsync(refreshToken);
+        }
+
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = false, // localhost
+            SameSite = SameSiteMode.Lax,
+            Path = "/"
+        });
+
+        return Ok();
+    }
     [HttpPost("google-login")]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
     {

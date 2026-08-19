@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { FaHeart } from "react-icons/fa";
 import { apiFetch } from "../api/apiClient";
+import { useGlobalContext } from "../context/GlobalContext";
 
 
 
 function NotificationsView() {
     const [notifications,setallnotifications]=useState([]);
+    const { accessToken } = useGlobalContext();
 
     const fetchallNotifications = async () => {
         console.log("fetchallnotifications method started");
-        const token = localStorage.getItem("token");
         const response = await apiFetch('/api/Notifications/getall', {
             method: "GET",
-            headers: { "Authorization": `Bearer ${token}` }
         });
         if(response.ok){
             var data=await response.json();
@@ -23,7 +23,9 @@ function NotificationsView() {
 
     }
 
-    useEffect(()=>{fetchallNotifications();}, [])
+    useEffect(()=>{
+        if(accessToken) fetchallNotifications();
+    }, [accessToken])
 
     return (
         <div>

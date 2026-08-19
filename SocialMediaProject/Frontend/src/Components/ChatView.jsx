@@ -19,7 +19,7 @@ function ChatView() {
     const location = useLocation();
     const [showpeople, setshowpeople] = useState(false);
     const [allusers, setallusers] = useState(null);
-    const { onlineUsers, connection, listofNewMessageSenders } = useGlobalContext();
+    const { onlineUsers, connection, listofNewMessageSenders,accessToken,setaccessToken } = useGlobalContext();
     const { userid } = useParams();
     const [typingUsers, setTypingUsers] = useState(new Set());
     const [searchResults, setSearchResults] = useState([]);
@@ -58,6 +58,9 @@ function ChatView() {
     }, [onlineUsers]);
 
     const fetchallchats = async () => {
+        if(!accessToken){
+            return;
+        }
         const response = await apiFetch('/api/Message/chats', {
             method: "GET"
         });
@@ -76,7 +79,7 @@ function ChatView() {
     }
     useEffect(() => {
         fetchallchats();
-    }, []);
+    }, [accessToken]);
     const handleClickAChat = async (userId, username) => {
         navigate(`/home/chat/${userId}`);
         setselecteduser(username);

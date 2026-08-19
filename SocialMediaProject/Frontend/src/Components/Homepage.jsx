@@ -30,14 +30,13 @@ function Homepage() {
   const [fold, setfold] = useState(false);
   const { connection, setOnlineUsers, setConnection, setUser } = useGlobalContext();
   const isMobile = useMediaQuery({ maxWidth: 767 });
-  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, notifications } = useGlobalContext();
+  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, notifications, accessToken, setaccessToken } = useGlobalContext();
 
 
   const fetchpostsfromdb = async () => {
-    const token = localStorage.getItem("token");
     const response = await apiFetch(('/api/Posts'), {
       method: "GET",
-      headers: { "Authorization": `Bearer ${token}` }
+
     });
 
     if (response.ok) {
@@ -60,11 +59,19 @@ function Homepage() {
     }
     setOnlineUsers(new Set());
     setUser(null);
-    localStorage.removeItem("token");
+
     localStorage.removeItem("initials");
     setLatestMessage(null);
     setUnreadMessagesCount(0);
     setConnection(null);
+    const response = await apiFetch(('/api/RegisterandLogin/logout'), {
+      method: "POST",
+      credentials: "include"
+    });
+    if (response.ok) {
+      console.log("logout successfull");
+    }
+    setaccessToken(null);
     navigate("/login");
   }
 
@@ -85,8 +92,6 @@ function Homepage() {
 
   const handleCreatePost = async (e, mode, content, selectedFiles) => {
     e.preventDefault();
-
-    const token = localStorage.getItem("token");
 
     const formData = new FormData();
     console.log(content)
@@ -114,9 +119,6 @@ function Homepage() {
     if (mode === "Post") {
       const response = await apiFetch('/api/Posts/create', {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
       });
 
@@ -135,9 +137,6 @@ function Homepage() {
 
       const response = await apiFetch('/api/ReplyTo/post', {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
       });
 

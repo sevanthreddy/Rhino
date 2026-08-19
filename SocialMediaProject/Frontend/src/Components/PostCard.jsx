@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import CommentCard from './Commentcard';
 import { getAssetUrl } from '../config';
 import { apiFetch } from '../api/apiClient';
+import { useGlobalContext } from "../context/GlobalContext";
 
 
 function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
@@ -13,16 +14,17 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
   const [likecountofpost, setlikecountofpost] = useState(likeCount);
   const [liked, setliked] = useState(isLiked);
   const [commentclick, setcommentclick] = useState(false);
+  const { accessToken } = useGlobalContext();
 
 
   const handleClickLike = async (e) => {
     e.stopPropagation();
     console.log("entered click like function", post.id);
-    var token = localStorage.getItem("token");
+    const token = accessToken;
     console.log(post.id);
     const response = await apiFetch(`/api/Posts/like/${post.id}`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "Authorization": `Bearer ${token}` },
     });
     var data = await response.json()
     console.log(data);
