@@ -4,8 +4,8 @@ import { FiImage } from "react-icons/fi";
 import { useOutletContext } from "react-router-dom";
 
 
-const CreatePostCard = ({ oncreate }) => {
-    const  handleCreatePost  = useOutletContext();
+const CreatePostCard = ({ oncreate,createpost }) => {
+    //const  { handleCreatePost } = useOutletContext();
 
     const [content, setContent] = useState("");
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -21,7 +21,7 @@ const CreatePostCard = ({ oncreate }) => {
     }, [location.pathname]);
 
     const CreatePost=async (e)=>{
-        await handleCreatePost(e,mode,content,selectedFiles);
+        await createpost(e,mode,content,selectedFiles);
         await oncreate();
         setContent("");
     }

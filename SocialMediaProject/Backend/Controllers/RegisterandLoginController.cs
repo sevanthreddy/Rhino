@@ -80,7 +80,7 @@ public class RegisterandLoginController : ControllerBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine("🔥🔥 LOGIN EXCEPTION 🔥🔥");
+
             Console.WriteLine(ex.ToString());
 
             return StatusCode(500, new
@@ -166,7 +166,7 @@ public class RegisterandLoginController : ControllerBase
     {
         try
         {
-            // 🛡️ 1. Cryptographically verify the token with Google's public keys
+            //  1. Cryptographically verify the token with Google's public keys
             var settings = new GoogleJsonWebSignature.ValidationSettings()
             {
                 Audience = new List<string> { "548377775699-jvaoa9mu4cvedtflbd9tb42in3m8icso.apps.googleusercontent.com" }
@@ -175,16 +175,16 @@ public class RegisterandLoginController : ControllerBase
             // If the token is fake, expired, or tampered with, this line will throw an exception
             var payload = await GoogleJsonWebSignature.ValidateAsync(dto.Token, settings);
 
-            // 🔍 2. Extract user identity claims from the verified Google payload
+            //  2. Extract user identity claims from the verified Google payload
             string email = payload.Email;
             string name = payload.Name;
 
-            // 🗄️ 3. Check if this email already exists in your SQL Server database
+            //  3. Check if this email already exists in your SQL Server database
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null)
             {
-                // 🆕 4. If they don't exist, register them on-the-fly!
+                //  4. If they don't exist, register them on-the-fly!
                 user = new User
                 {
                     Email = email,
@@ -198,10 +198,10 @@ public class RegisterandLoginController : ControllerBase
                 Console.WriteLine($"🎉 Automatically registered fresh Google user: {email}");
             }
 
-            // 🔑 5. Generate your OWN application's custom JWT authentication token
+            //  5. Generate your OWN application's custom JWT authentication token
             var myAppToken = _authService.GenerateJwtToken(user);
 
-            // 🚀 6. Send the application token back to React
+            //  6. Send the application token back to React
             return Ok(new { token = myAppToken });
         }
         catch (InvalidJwtException)

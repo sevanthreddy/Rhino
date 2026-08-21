@@ -13,7 +13,7 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
   const [likecountofpost, setlikecountofpost] = useState(likeCount);
   const [liked, setliked] = useState(isLiked);
   const [commentclick, setcommentclick] = useState(false);
-  const { accessToken } = useGlobalContext();
+  const { accessToken,apiFetch } = useGlobalContext();
 
 
   const handleClickLike = async (e) => {
