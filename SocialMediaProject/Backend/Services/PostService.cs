@@ -11,12 +11,15 @@ public class PostService : IPostService
     private readonly INotificationService _notificationService;
 
     private readonly ServiceBusPublisher _servicebusPublisher;
+    private readonly BlobStorageService _blobStorage;
 
-    public PostService(ApplicationDbContext context,INotificationService notificationService,ServiceBusPublisher serviceBusPublisher)
+
+    public PostService(ApplicationDbContext context,INotificationService notificationService,ServiceBusPublisher serviceBusPublisher,BlobStorageService blobStorageService)
     {
         _context = context;
         _notificationService=notificationService;
         _servicebusPublisher=serviceBusPublisher;
+        _blobStorage=blobStorageService;
     }
 
     public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
@@ -36,7 +39,7 @@ public class PostService : IPostService
             Username = posts.User.Username, // Access the Username from the related User entity
             LikeCount = _context.Likes.Where(p => p.Postid == posts.Id).Count(),
             IsLiked = _context.Likes.Where(p => p.Postid == posts.Id && p.Userid == userid).Any(),
-            ImagesRelatedtoPost = _context.Images.Where(i => i.postid == posts.Id).Select(i => "uploads/" + i.ImageURL).ToList(),
+            ImagesRelatedtoPost = _context.Images.Where(i => i.postid == posts.Id).Select(i => i.ImageURL).ToList(),
             profileImage = posts.User.ProfileImageURL
         });
         for(int i=0;i<datattorontend.Count();i++)
@@ -90,14 +93,16 @@ public class PostService : IPostService
             foreach (var image in createPostDto.Images)
             {
                 var filename = Guid.NewGuid() + Path.GetExtension(image.FileName);
+                var imageUrl = await _blobStorage.UploadAsync(image, filename);
                 images.Add(new Images
                 {
                     postid = post.Id,
-                    ImageURL = filename
+                    ImageURL = imageUrl
                 });
-                var pathcombine = Path.Combine("wwwroot", "Uploads", filename);
-                var filestream = new FileStream(pathcombine, FileMode.Create);
-                await image.CopyToAsync(filestream);
+                //var pathcombine = Path.Combine("wwwroot", "Uploads", filename);
+                //var filestream = new FileStream(pathcombine, FileMode.Create);
+                //await image.CopyToAsync(filestream);
+                
             }
             _context.Images.AddRange(images);
             await _context.SaveChangesAsync();

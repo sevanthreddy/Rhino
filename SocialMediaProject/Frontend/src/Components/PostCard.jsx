@@ -84,7 +84,7 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
                 return (
                   <img
                     key={everyimage}
-                    src={getAssetUrl(`/${everyimage}`)}
+                    src={everyimage}
                     alt="image related to the post"
                     className="w-full rounded-lg mt-2 mb-2"
                   />
