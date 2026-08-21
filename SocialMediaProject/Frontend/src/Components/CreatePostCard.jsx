@@ -21,6 +21,7 @@ const CreatePostCard = ({ oncreate,createpost }) => {
     }, [location.pathname]);
 
     const CreatePost=async (e)=>{
+        
         await createpost(e,mode,content,selectedFiles);
         await oncreate();
         setContent("");

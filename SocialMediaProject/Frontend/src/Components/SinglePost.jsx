@@ -3,6 +3,8 @@ import { useParams,useNavigate } from "react-router-dom";
 import PostCard from "./PostCard";
 import CreatePostCard from "./CreatePostCard";
 import { useGlobalContext } from "../context/GlobalContext";
+import { useOutletContext } from "react-router-dom";
+
 
 function SinglePost() {
     const { id } = useParams();
@@ -10,6 +12,10 @@ function SinglePost() {
     const [post, setPost] = useState(null);
     const [replies, setreplies] = useState([]);
       const navigate = useNavigate();
+      const {
+          apiFetch
+        } = useGlobalContext();
+        const { handleCreatePost } = useOutletContext();
 
 
     useEffect(() => {
@@ -52,7 +58,7 @@ function SinglePost() {
     return (
         <div>
             {post && <PostCard post={post} />}
-            <CreatePostCard oncreate={handleCreateReplies} ></CreatePostCard>
+            <CreatePostCard createpost={handleCreatePost} oncreate={handleCreateReplies} ></CreatePostCard>
             {replies && replies.map(r => <PostCard post={r}></PostCard>)}
 
         </div>
