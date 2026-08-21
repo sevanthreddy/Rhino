@@ -24,37 +24,30 @@ public class PostService : IPostService
 
 public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
 {
-        try
-        {
-            var result = await _context.Posts
-        .Include(p => p.User)
-        .OrderByDescending(p => p.CreatedAt)
-        .Select(p => new PostDto
+    try
+    {
+        var result = await _context.Posts
+            .ToListAsync();
+
+        Console.WriteLine($"POST COUNT: {result.Count}");
+
+        return result.Select(p => new PostDto
         {
             Id = p.Id,
             Content = p.Content,
             CreatedAt = p.CreatedAt,
-            UserId = p.UserId,
-            TimeAgo = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-            Initials = p.User.Username.Length >= 2 ? p.User.Username.Substring(0, 2).ToUpper() : p.User.Username.ToUpper(),
-            Username = p.User.Username,
-            LikeCount = p.Likes.Count(),
-            IsLiked = p.Likes.Any(l => l.Userid == userid),
-            ImagesRelatedtoPost = p.Images.Select(i => i.ImageURL).ToList(),
-            profileImage = p.User.ProfileImageURL
-        })
-        .ToListAsync();
-
-    return result;
-            
-        }catch (Exception ex)
-{
-    Console.WriteLine("GET POSTS FAILED:");
-    Console.WriteLine(ex.ToString());
-    throw;
+            UserId = p.UserId
+        });
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("GET POSTS FAILED:");
+        Console.WriteLine(ex.ToString());
+        throw;
+    }
 }
     
-}
+
 
     public async Task<PostDto> GetPostByIdAsync(int userid, int postid)
     {
