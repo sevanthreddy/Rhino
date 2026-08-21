@@ -7,10 +7,10 @@ public class BlobStorageService
     public BlobStorageService(IConfiguration configuration)
     {
         var connectionString =
-            configuration["AzureBlobStorage:ConnectionString"];
+    configuration["AZURE_BLOB_CONNECTION_STRING"];
 
         var containerName =
-            configuration["AzureBlobStorage:PostImagesContainer"];
+            configuration["AZURE_POST_IMAGES_CONTAINER"];
 
         _container = new BlobContainerClient(
             connectionString,
