@@ -24,7 +24,9 @@ public class PostService : IPostService
 
 public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
 {
-    var result = await _context.Posts
+        try
+        {
+            var result = await _context.Posts
         .Include(p => p.User)
         .OrderByDescending(p => p.CreatedAt)
         .Select(p => new PostDto
@@ -44,6 +46,14 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
         .ToListAsync();
 
     return result;
+            
+        }catch (Exception ex)
+{
+    Console.WriteLine("GET POSTS FAILED:");
+    Console.WriteLine(ex.ToString());
+    throw;
+}
+    
 }
 
     public async Task<PostDto> GetPostByIdAsync(int userid, int postid)
