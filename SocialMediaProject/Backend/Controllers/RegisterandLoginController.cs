@@ -52,28 +52,43 @@ public class RegisterandLoginController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto loginDto)
     {
-        // Implement login logic here
-        var (success, message, token, refreshToken) = await _authService.LoginUserAsync(loginDto);
-
-        if (!success)
+        try
         {
-            return BadRequest(message);
+            // Implement login logic here
+            var (success, message, token, refreshToken) = await _authService.LoginUserAsync(loginDto);
+
+            if (!success)
+            {
+                return BadRequest(message);
+            }
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return BadRequest("Refresh token was not generated.");
+            }
+
+            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = _cookieOptions.Secure,
+                SameSite = _cookieOptions.SameSite,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddDays(_cookieOptions.ExpirationDays)
+            });
+
+            return Ok(new { Message = message, Token = token });
+
         }
-        if (string.IsNullOrWhiteSpace(refreshToken))
+        catch (Exception ex)
         {
-            return BadRequest("Refresh token was not generated.");
+            Console.WriteLine("🔥🔥 LOGIN EXCEPTION 🔥🔥");
+            Console.WriteLine(ex.ToString());
+
+            return StatusCode(500, new
+            {
+                message = ex.Message
+            });
         }
 
-        Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = _cookieOptions.Secure,
-            SameSite = _cookieOptions.SameSite,
-            Path = "/",
-            Expires = DateTimeOffset.UtcNow.AddDays(_cookieOptions.ExpirationDays)
-        });
-
-        return Ok(new { Message = message, Token = token });
     }
 
     [HttpPost("refresh")]
@@ -103,7 +118,7 @@ public class RegisterandLoginController : ControllerBase
            Path = "/"
        }
    );
-   Console.WriteLine("RefreshAccessToken method ended {0}",res.NewRefreshToken);
+                Console.WriteLine("RefreshAccessToken method ended {0}", res.NewRefreshToken);
                 return Ok(new
                 {
                     success = res.Success,
@@ -121,7 +136,7 @@ public class RegisterandLoginController : ControllerBase
             Console.WriteLine(e);
             return BadRequest();
         }
-        
+
 
     }
 
