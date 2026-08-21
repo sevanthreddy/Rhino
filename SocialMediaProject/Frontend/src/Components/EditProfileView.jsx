@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import { HiCamera } from "react-icons/hi";
 import { useRef } from "react";
-import { apiFetch } from "../api/apiClient";
-
+import { useGlobalContext } from "../context/GlobalContext";
 
 
 function EditProfileView({ onclose }) {

@@ -4,8 +4,10 @@ using Backend.Services;
 using Google.Apis.Auth;
 using Backend.Models;
 using Backend.Data;
+using Backend.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Controllers;
 
@@ -15,12 +17,17 @@ public class RegisterandLoginController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ApplicationDbContext _context;
+    private readonly AuthCookieOptions _cookieOptions;
 
     // Inject the AuthService instead of the DbContext!
-    public RegisterandLoginController(IAuthService authService, ApplicationDbContext context)
+    public RegisterandLoginController(
+        IAuthService authService,
+        ApplicationDbContext context,
+        IOptions<AuthCookieOptions> cookieOptions)
     {
         _authService = authService;
         _context = context;
+        _cookieOptions = cookieOptions.Value;
     }
 
     [HttpPost("register")]
@@ -52,13 +59,18 @@ public class RegisterandLoginController : ControllerBase
         {
             return BadRequest(message);
         }
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return BadRequest("Refresh token was not generated.");
+        }
+
         Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Path = "/api/RegisterandLogin/refresh",
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
+            Secure = _cookieOptions.Secure,
+            SameSite = _cookieOptions.SameSite,
+            Path = "/",
+            Expires = DateTimeOffset.UtcNow.AddDays(_cookieOptions.ExpirationDays)
         });
 
         return Ok(new { Message = message, Token = token });
@@ -70,6 +82,7 @@ public class RegisterandLoginController : ControllerBase
     {
         try
         {
+            Console.WriteLine("RefreshAccessToken method started");
             var refreshtoken = Request.Cookies["refreshToken"];
             if (string.IsNullOrEmpty(refreshtoken))
             {
@@ -84,18 +97,18 @@ public class RegisterandLoginController : ControllerBase
        new CookieOptions
        {
            HttpOnly = true,
-           Secure = true, // localhost
-           SameSite = SameSiteMode.None,
-           Expires = DateTimeOffset.UtcNow.AddDays(7),
+           Secure = _cookieOptions.Secure,
+           SameSite = _cookieOptions.SameSite,
+           Expires = DateTimeOffset.UtcNow.AddDays(_cookieOptions.ExpirationDays),
            Path = "/"
        }
    );
+   Console.WriteLine("RefreshAccessToken method ended {0}",res.NewRefreshToken);
                 return Ok(new
                 {
                     success = res.Success,
                     message = res.Message,
-                    newAccessToken = res.NewAccessToken,
-                    refreshToken = res.NewRefreshToken
+                    newAccessToken = res.NewAccessToken
                 });
             }
             else
@@ -108,6 +121,7 @@ public class RegisterandLoginController : ControllerBase
             Console.WriteLine(e);
             return BadRequest();
         }
+        
 
     }
 
@@ -125,8 +139,8 @@ public class RegisterandLoginController : ControllerBase
         Response.Cookies.Delete("refreshToken", new CookieOptions
         {
             HttpOnly = true,
-            Secure = false, // localhost
-            SameSite = SameSiteMode.Lax,
+            Secure = _cookieOptions.Secure,
+            SameSite = _cookieOptions.SameSite,
             Path = "/"
         });
 

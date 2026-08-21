@@ -5,8 +5,7 @@ import PostCard from './PostCard';
 import { useOutletContext } from "react-router-dom";
 import { MdArrowBack } from "react-icons/md";
 import { getAssetUrl } from "../config";
-import { apiFetch } from "../api/apiClient";
-
+import { useGlobalContext } from "../context/GlobalContext";
 
 function ProfileView() {
     const { handleCommentClick, handleProfileClick, handleClickPost } = useOutletContext();

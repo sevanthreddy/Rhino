@@ -10,7 +10,6 @@ import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useGlobalContext } from "../context/GlobalContext";
 import { useMediaQuery } from "react-responsive";
 import { IoNotificationsOutline } from "react-icons/io5";
-import { apiFetch } from "../api/apiClient";
 
 
 
@@ -19,7 +18,6 @@ import { apiFetch } from "../api/apiClient";
 
 
 
-// 🔌 Homepage accepts 'onLogout' as a prop from App.jsx
 function Homepage() {
   const [posts, setposts] = useState([]);
   const navigate = useNavigate();
@@ -30,7 +28,7 @@ function Homepage() {
   const [fold, setfold] = useState(false);
   const { connection, setOnlineUsers, setConnection, setUser } = useGlobalContext();
   const isMobile = useMediaQuery({ maxWidth: 767 });
-  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, notifications, accessToken, setaccessToken } = useGlobalContext();
+  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, notifications, accessToken, setaccessToken,apiFetch } = useGlobalContext();
 
 
   const fetchpostsfromdb = async () => {
@@ -81,9 +79,12 @@ function Homepage() {
   }
 
   useEffect(() => {
+    if(!accessToken){
+      return
+    }
     fetchpostsfromdb();
     setfold(location.pathname.startsWith("/home/chat"));
-  }, []);
+  }, [accessToken]);
 
   const handleCommentClick = (post) => {
     setisCommentClicked(true);

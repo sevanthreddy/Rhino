@@ -1,16 +1,15 @@
-console.log("SingleChat rendered");
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useParams, useOutletContext, useNavigate } from "react-router-dom";
 import * as signalR from "@microsoft/signalr";
 import { MdSend } from "react-icons/md";
 import { MdArrowBack, MdDone, MdDoneAll } from "react-icons/md";
 import { useGlobalContext } from "../context/GlobalContext";
-import { apiFetch } from "../api/apiClient";
 
 
 
 
 function SingleChat() {
+    
     const [curuser, setcuruser] = useState(0);
     const [messages, setmessages] = useState([]);
     const { userid } = useParams();
@@ -19,7 +18,7 @@ function SingleChat() {
     const [text, settext] = useState("");
     const { selecteduser, fetchallchats } = useOutletContext();
     const navigate = useNavigate();
-    const { connection, latestMessage, getUnreadMessagesCount } = useGlobalContext();
+    const { connection, latestMessage, getUnreadMessagesCount,apiFetch } = useGlobalContext();
     const [isTyping, setisTyping] = useState(false);
     var timer = useRef(null);
     const pendingAcknowledgement = useRef(null);
@@ -27,6 +26,7 @@ function SingleChat() {
     const shouldAdjustScroll = useRef(false);
     const prevScrollHeightRef = useRef(0);
     const messagesRef = useRef([]);
+console.log("SingleChat rendered");
 
 
     useEffect(() => {

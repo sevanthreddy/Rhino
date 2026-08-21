@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { FaHeart } from "react-icons/fa";
-import { apiFetch } from "../api/apiClient";
 import { useGlobalContext } from "../context/GlobalContext";
 
 

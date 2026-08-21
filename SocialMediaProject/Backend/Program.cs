@@ -1,5 +1,6 @@
 using System.Text;
 using Backend.Data;
+using Backend.Configuration;
 using Backend.Hubs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,6 +16,9 @@ using Azure.Core;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<AuthCookieOptions>(
+    builder.Configuration.GetSection("AuthCookie"));
 
 // === PHASE 1: REGISTER SERVICES (Must be BEFORE builder.Build()) ===
 builder.Services.AddControllers();

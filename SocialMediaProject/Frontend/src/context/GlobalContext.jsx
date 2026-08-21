@@ -1,27 +1,23 @@
-console.log("GlobalProvider rendered");
 
 import {
     createContext,
     useContext,
     useEffect,
+    useRef,
     useState
 } from "react";
 
 import * as signalR from "@microsoft/signalr";
-
 import { getApiUrl } from "../config";
-
-import {
-    apiFetch,
-    setToken,
-    setTokenUpdater
-} from "../api/apiClient";
-
 
 const GlobalContext = createContext();
 
-
 export function GlobalProvider({ children }) {
+    console.log("Globalcontext rendered");
+
+    // =========================
+    // STATE
+    // =========================
 
     const [user, setUser] = useState(null);
 
@@ -41,58 +37,383 @@ export function GlobalProvider({ children }) {
 
     const [accessToken, setaccessToken] = useState(null);
 
+    // VERY IMPORTANT
+    // Application should wait until we finish checking
+    // whether a refresh session exists.
+    const [authLoading, setAuthLoading] = useState(true);
 
-    // ---------------------------------------------------
-    // UNREAD MESSAGES
-    // ---------------------------------------------------
 
-    const getUnreadMessagesCount = async () => {
+    // =========================
+    // REFRESH LOCK
+    // =========================
 
-        console.log("getUnreadMessagesCount method started");
+    // If multiple API calls receive 401 at the same time,
+    // they will all wait for this SAME promise.
+    const refreshPromiseRef = useRef(null);
 
-        const response = await apiFetch(
-            '/api/Message/unread',
-            {
-                method: 'GET'
-            }
-        );
 
-        if (response.ok) {
+    // =========================
+    // REFRESH SESSION
+    // =========================
 
-            const data = await response.json();
+    const refreshSession = async () => {
 
-            setUnreadMessagesCount(data.length);
+        // If a refresh request is already running,
+        // don't start another one.
+        if (refreshPromiseRef.current) {
 
-            setListofNewMessageSenders(data);
+            console.log(
+                "⏳ Refresh already running. Waiting for existing refresh."
+            );
+
+            return refreshPromiseRef.current;
         }
 
-        console.log("getUnreadMessagesCount method ended");
+
+        refreshPromiseRef.current = (async () => {
+
+            try {
+
+                console.log("🔥 REFRESH SESSION STARTED");
+
+                const response = await fetch(
+                    getApiUrl("/api/RegisterandLogin/refresh"),
+                    {
+                        method: "POST",
+                        credentials: "include"
+                    }
+                );
+
+                console.log(
+                    "🔥 REFRESH RESPONSE:",
+                    response.status
+                );
+
+
+                if (!response.ok) {
+
+                    console.log(
+                        "❌ No valid refresh session"
+                    );
+
+                    setaccessToken(null);
+                    setUser(null);
+
+                    return null;
+                }
+
+
+                const data = await response.json();
+
+                console.log(
+                    "🔥 REFRESH DATA:",
+                    data
+                );
+
+
+                const newAccessToken = data.newAccessToken;
+
+
+                if (!newAccessToken) {
+
+                    console.log(
+                        "❌ Refresh response did not contain access token"
+                    );
+
+                    setaccessToken(null);
+                    setUser(null);
+
+                    return null;
+                }
+
+
+                console.log(
+                    "✅ New access token received"
+                );
+
+
+                // Store new access token in React state
+                setaccessToken(newAccessToken);
+
+
+                return newAccessToken;
+
+            }
+            catch (error) {
+
+                console.error(
+                    "❌ Refresh request failed:",
+                    error
+                );
+
+                setaccessToken(null);
+                setUser(null);
+
+                return null;
+            }
+            finally {
+
+                // Allow another refresh in the future
+                refreshPromiseRef.current = null;
+            }
+
+        })();
+
+
+        return refreshPromiseRef.current;
     };
 
 
-    // ---------------------------------------------------
-    // NOTIFICATIONS
-    // ---------------------------------------------------
+    // =========================
+    // API FETCH
+    // =========================
 
-    const handleNotification = async () => {
+    const apiFetch = async (path, options = {}) => {
 
-        console.log("handleNotification api started");
+        console.log(
+            "apiFetch token:",
+            accessToken
+        );
+
+        console.log(
+            "api path:",
+            path
+        );
+
+
+        let headers = {
+            ...(options.headers || {})
+        };
+
+
+        // Add access token if we have one
+        if (accessToken) {
+
+            headers.Authorization =
+                `Bearer ${accessToken}`;
+        }
+
+
+        // First request
+        let response;
+
+        try {
+
+            response = await fetch(
+                getApiUrl(path),
+                {
+                    ...options,
+                    headers
+                }
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "❌ API request failed:",
+                error
+            );
+
+            throw error;
+        }
+
+
+        // =========================
+        // NOT UNAUTHORIZED
+        // =========================
+
+        if (response.status !== 401) {
+
+            return response;
+        }
+
+
+        // =========================
+        // 401
+        // =========================
+
+        console.log(
+            "🔥 API returned 401"
+        );
+
+
+        // Try to refresh
+        const newAccessToken =
+            await refreshSession();
+
+
+        // Refresh failed
+        if (!newAccessToken) {
+
+            console.log(
+                "❌ Could not refresh access token"
+            );
+
+            return response;
+        }
+
+
+        // =========================
+        // RETRY ORIGINAL REQUEST
+        // =========================
+
+        console.log(
+            "🔄 Retrying original API request"
+        );
+
+
+        headers.Authorization =
+            `Bearer ${newAccessToken}`;
+
+
+        response = await fetch(
+            getApiUrl(path),
+            {
+                ...options,
+                headers
+            }
+        );
+
+
+        return response;
+    };
+
+
+    // =========================
+    // LOGIN TOKEN SETTER
+    // =========================
+
+    const setLoginToken = (token) => {
+
+        console.log(
+            "🔥 Setting login access token"
+        );
+
+        setaccessToken(token);
+    };
+
+
+    // =========================
+    // LOGOUT
+    // =========================
+
+    const logout = async () => {
+
+        try {
+
+            console.log(
+                "🔥 Logout started"
+            );
+
+
+            // Tell backend to revoke refresh token
+            await fetch(
+                getApiUrl("/api/RegisterandLogin/logout"),
+                {
+                    method: "POST",
+                    credentials: "include"
+                }
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Logout API failed:",
+                error
+            );
+
+        }
+        finally {
+
+            // Clear frontend authentication
+            setaccessToken(null);
+
+            setUser(null);
+
+            setOnlineUsers(new Set());
+
+            setConnection(null);
+
+            console.log(
+                "✅ Logged out"
+            );
+        }
+    };
+
+
+    // =========================
+    // UNREAD MESSAGES
+    // =========================
+
+    const getUnreadMessagesCount = async () => {
+
+        console.log(
+            "getUnreadMessagesCount method started"
+        );
+
 
         const response = await apiFetch(
-            '/api/Notifications/getall',
+            "/api/Message/unread",
             {
                 method: "GET"
             }
         );
 
+
         if (response.ok) {
 
-            const data = await response.json();
+            const data =
+                await response.json();
+
+            setUnreadMessagesCount(
+                data.length
+            );
+
+            setListofNewMessageSenders(
+                data
+            );
+        }
+
+
+        console.log(
+            "getUnreadMessagesCount method ended"
+        );
+    };
+
+
+    // =========================
+    // NOTIFICATIONS
+    // =========================
+
+    const handleNotification = async () => {
+
+        console.log(
+            "handleNotification api started"
+        );
+
+
+        const response = await apiFetch(
+            "/api/Notifications/getall",
+            {
+                method: "GET"
+            }
+        );
+
+
+        if (response.ok) {
+
+            const data =
+                await response.json();
 
             setnotifications(data);
         }
 
-        console.log("handleNotification api ended");
+
+        console.log(
+            "handleNotification api ended"
+        );
     };
 
 
@@ -105,26 +426,15 @@ export function GlobalProvider({ children }) {
     };
 
 
-    // ---------------------------------------------------
-    // CONNECT apiClient TO GLOBAL CONTEXT
-    // ---------------------------------------------------
-
-    useEffect(() => {
-
-        console.log("🔥 Registering token updater");
-
-        setTokenUpdater(setaccessToken);
-
-    }, []);
-
-
-    // ---------------------------------------------------
+    // =========================
     // RESTORE SESSION
-    // ---------------------------------------------------
+    // =========================
 
     useEffect(() => {
 
-        console.log("🔥 RESTORE SESSION EFFECT RUNNING");
+        console.log(
+            "🔥 RESTORE SESSION EFFECT RUNNING"
+        );
 
 
         const restoreSession = async () => {
@@ -134,56 +444,31 @@ export function GlobalProvider({ children }) {
             );
 
 
-            const response = await fetch(
-                getApiUrl(
-                    "/api/RegisterandLogin/refresh"
-                ),
-                {
-                    method: "POST",
-                    credentials: "include"
-                }
-            );
+            const newToken =
+                await refreshSession();
 
 
-            console.log(
-                "🔥 REFRESH RESPONSE:",
-                response
-            );
-
-
-            if (response.ok) {
-
-                const data = await response.json();
+            if (newToken) {
 
                 console.log(
-                    "🔥 REFRESH DATA:",
-                    data
-                );
-
-
-                const newToken =
-                    data.newAccessToken;
-
-
-                // Update GlobalContext
-                setaccessToken(newToken);
-
-
-                // Update apiClient
-                setToken(newToken);
-
-
-                console.log(
-                    "🔥 Token restored successfully"
-                );
-
-            } else {
-
-                console.log(
-                    "❌ No valid refresh session"
+                    "✅ Session restored"
                 );
 
             }
+            else {
+
+                console.log(
+                    "❌ No valid session"
+                );
+
+                setaccessToken(null);
+                setUser(null);
+            }
+
+
+            // VERY IMPORTANT
+            // The application can now render.
+            setAuthLoading(false);
 
         };
 
@@ -193,33 +478,41 @@ export function GlobalProvider({ children }) {
     }, []);
 
 
-    // ---------------------------------------------------
-    // WHEN ACCESS TOKEN EXISTS
-    // ---------------------------------------------------
-
-    useEffect(() => {
-
-        if (accessToken != null) {
-
-            console.log(
-                "🔥 Access token exists - loading user data"
-            );
-
-            getUnreadMessagesCount();
-
-            handleNotification();
-        }
-
-    }, [accessToken]);
-
-
-    // ---------------------------------------------------
-    // SIGNALR CONNECTION
-    // ---------------------------------------------------
+    // =========================
+    // LOAD USER DATA
+    // =========================
 
     useEffect(() => {
 
         if (!accessToken) {
+            return;
+        }
+
+
+        console.log(
+            "🔥 Access token exists - loading user data"
+        );
+
+
+        getUnreadMessagesCount();
+
+        handleNotification();
+
+    }, [accessToken]);
+
+
+    // =========================
+    // SIGNALR
+    // =========================
+
+    useEffect(() => {
+
+        if (!accessToken) {
+
+            console.log(
+                "❌ No access token. SignalR not started."
+            );
+
             return;
         }
 
@@ -231,40 +524,32 @@ export function GlobalProvider({ children }) {
 
         const newConnection =
             new signalR.HubConnectionBuilder()
-
                 .withUrl(
-                    getApiUrl('/chatHub'),
+                    getApiUrl("/chatHub"),
                     {
-                        accessTokenFactory:
-                            () => accessToken
+                        accessTokenFactory: () =>
+                            accessToken
                     }
                 )
-
                 .withAutomaticReconnect()
-
                 .build();
 
-
-        // ---------------------------------------------------
-        // USER ONLINE
-        // ---------------------------------------------------
 
         const handleUserOnline = (userId) => {
 
             setOnlineUsers(prev => {
 
-                const next = new Set(prev);
+                const next =
+                    new Set(prev);
 
-                next.add(Number(userId));
+                next.add(
+                    Number(userId)
+                );
 
                 return next;
             });
         };
 
-
-        // ---------------------------------------------------
-        // ALL ONLINE USERS
-        // ---------------------------------------------------
 
         const handleOnlineUsers = (users) => {
 
@@ -274,26 +559,21 @@ export function GlobalProvider({ children }) {
         };
 
 
-        // ---------------------------------------------------
-        // USER OFFLINE
-        // ---------------------------------------------------
-
         const handleUserOffline = (userId) => {
 
             setOnlineUsers(prev => {
 
-                const next = new Set(prev);
+                const next =
+                    new Set(prev);
 
-                next.delete(Number(userId));
+                next.delete(
+                    Number(userId)
+                );
 
                 return next;
             });
         };
 
-
-        // ---------------------------------------------------
-        // RECEIVE MESSAGE
-        // ---------------------------------------------------
 
         const receiveMessage = async (message) => {
 
@@ -311,102 +591,97 @@ export function GlobalProvider({ children }) {
 
             if (
                 message.senderId !==
-                Number(
-                    localStorage.getItem("userid")
-                )
+                Number(localStorage.getItem("userid"))
             ) {
 
-                await newConnection.invoke(
-                    "RegisterDeliveredMesssage",
-                    message.messageId,
-                    message.senderId
+                try {
+
+                    await newConnection.invoke(
+                        "RegisterDeliveredMesssage",
+                        message.messageId,
+                        message.senderId
+                    );
+
+                    console.log(
+                        "Registering delivered message"
+                    );
+
+                }
+                catch (error) {
+
+                    console.error(
+                        "SignalR invoke failed:",
+                        error
+                    );
+                }
+            }
+        };
+
+
+        const startConnection = async () => {
+
+            try {
+
+                newConnection.on(
+                    "AllUsers",
+                    handleOnlineUsers
+                );
+
+                newConnection.on(
+                    "UserOnline",
+                    handleUserOnline
+                );
+
+                newConnection.on(
+                    "UserOffline",
+                    handleUserOffline
+                );
+
+                newConnection.on(
+                    "ReceiveMessage",
+                    receiveMessage
+                );
+
+                newConnection.on(
+                    "ReceiveNotification",
+                    handlenewNotification
                 );
 
 
+                await newConnection.start();
+
+
                 console.log(
-                    "Registering read message"
+                    "✅ SignalR Connected"
+                );
+
+
+                setConnection(
+                    newConnection
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "❌ SignalR connection failed:",
+                    error
                 );
             }
         };
 
 
-        // ---------------------------------------------------
-        // START SIGNALR
-        // ---------------------------------------------------
-
-        async function startConnection() {
-
-            newConnection.on(
-                "AllUsers",
-                handleOnlineUsers
-            );
-
-            newConnection.on(
-                "UserOnline",
-                handleUserOnline
-            );
-
-            newConnection.on(
-                "UserOffline",
-                handleUserOffline
-            );
-
-            newConnection.on(
-                "ReceiveMessage",
-                receiveMessage
-            );
-
-            newConnection.on(
-                "ReceiveNotification",
-                handlenewNotification
-            );
-
-
-            await newConnection.start();
-
-
-            console.log("Connected");
-
-
-            setConnection(newConnection);
-        }
-
-
         startConnection();
 
 
-        // ---------------------------------------------------
-        // CLEANUP
-        // ---------------------------------------------------
-
         return () => {
 
-            newConnection.off(
-                "UserOnline",
-                handleUserOnline
-            );
-
-            newConnection.off(
-                "AllUsers",
-                handleOnlineUsers
-            );
-
-            newConnection.off(
-                "UserOffline",
-                handleUserOffline
-            );
-
-            newConnection.off(
-                "ReceiveMessage",
-                receiveMessage
-            );
-
-            newConnection.off(
-                "ReceiveNotification",
-                handlenewNotification
-            );
-
-
+            console.log("🧹 Cleaning SignalR connection");
+            newConnection.off("UserOnline", handleUserOnline);
+            newConnection.off("AllUsers", handleOnlineUsers);
+            newConnection.off("UserOffline", handleUserOffline);
+            newConnection.off("ReceiveMessage", receiveMessage);
+            newConnection.off("ReceiveNotification", handlenewNotification);
             newConnection.stop();
         };
 
@@ -414,23 +689,43 @@ export function GlobalProvider({ children }) {
     }, [accessToken]);
 
 
-    // ---------------------------------------------------
+    // =========================
     // CONTEXT
-    // ---------------------------------------------------
+    // =========================
 
     return (
 
         <GlobalContext.Provider
             value={{
 
+                // Authentication
                 user,
                 setUser,
 
+                accessToken,
+                setaccessToken,
+                setLoginToken,
+
+                authLoading,
+
+                refreshSession,
+
+                logout,
+
+                apiFetch,
+
+
+                // SignalR
                 connection,
                 setConnection,
 
-                setOnlineUsers,
                 onlineUsers,
+                setOnlineUsers,
+
+
+                // Messages
+                conversations,
+                setConversations,
 
                 unreadMessagesCount,
                 setUnreadMessagesCount,
@@ -438,19 +733,24 @@ export function GlobalProvider({ children }) {
                 latestMessage,
                 setLatestMessage,
 
-                getUnreadMessagesCount,
-
                 listofNewMessageSenders,
 
+                getUnreadMessagesCount,
+
+
+                // Notifications
                 notifications,
 
-                accessToken,
-                setaccessToken
+                handleNotification
 
             }}
         >
 
-            {children}
+            {authLoading ? (
+            <div>Loading...</div>
+        ) : (
+            children
+        )}
 
         </GlobalContext.Provider>
     );
@@ -459,5 +759,7 @@ export function GlobalProvider({ children }) {
 
 export function useGlobalContext() {
 
-    return useContext(GlobalContext);
+    return useContext(
+        GlobalContext
+    );
 }

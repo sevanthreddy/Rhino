@@ -5,13 +5,12 @@ import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { FiX } from "react-icons/fi";
 import { useGlobalContext } from "../context/GlobalContext";
 import { getAssetUrl } from "../config";
-import { apiFetch } from "../api/apiClient";
 
 
 
 
 function ChatView() {
-
+    console.log("Chatview rendered");
     const [allchats, setallchats] = useState(null);
     const [defaultview, setdefaultview] = useState(true);
     const navigate = useNavigate();
@@ -19,7 +18,7 @@ function ChatView() {
     const location = useLocation();
     const [showpeople, setshowpeople] = useState(false);
     const [allusers, setallusers] = useState(null);
-    const { onlineUsers, connection, listofNewMessageSenders,accessToken,setaccessToken } = useGlobalContext();
+    const { onlineUsers, connection, listofNewMessageSenders,accessToken,setaccessToken,apiFetch } = useGlobalContext();
     const { userid } = useParams();
     const [typingUsers, setTypingUsers] = useState(new Set());
     const [searchResults, setSearchResults] = useState([]);
@@ -54,7 +53,6 @@ function ChatView() {
 
     useEffect(() => {
         console.log("ChatView online users:", [...onlineUsers]);
-        console.log(userid);
     }, [onlineUsers]);
 
     const fetchallchats = async () => {

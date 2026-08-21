@@ -128,62 +128,86 @@ public class AuthService : IAuthService
             return null; // Return null if the token structure is completely corrupted or fake
         }
     }
-    
-    public async Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)>RefreshTokenAsync(string refreshToken)
+
+    public async Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)> RefreshTokenAsync(string refreshToken)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        // UPDLOCK+ROWLOCK: any other request trying to touch this same row
+        // has to wait here until this transaction commits or rolls back.
         var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
-
-        if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-        {
-            return (
-                false,
-                "Invalid or expired refresh token session. Please log in again.",
-                null,
-                null
-            );
-        }
-
-        string newAccessToken = GenerateJwtToken(user);
-        string newRefreshToken = GenerateRefreshToken();
-
-        // Rotate refresh token
-        user.RefreshToken = newRefreshToken;
-        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-
-        await _context.SaveChangesAsync();
-
-        return (
-            true,
-            "Token renewed successfully!",
-            newAccessToken,
-            newRefreshToken
-        );
-    }
-
-   public async Task<bool> RevokeRefreshTokenAsync(string refreshToken)
-{
-    try
-    {
-        var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
+            .FromSqlInterpolated($@"
+            SELECT * FROM Users WITH (UPDLOCK, ROWLOCK)
+            WHERE RefreshToken = {refreshToken} OR PreviousRefreshToken = {refreshToken}")
+            .FirstOrDefaultAsync();
 
         if (user == null)
         {
-            return false;
+            await transaction.RollbackAsync();
+            return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
         }
 
-        // Revoke the refresh token by clearing token and resetting expiry to a past value
+        // Case 1: current token — rotate normally
+        if (user.RefreshToken == refreshToken)
+        {
+            if (user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            {
+                await transaction.RollbackAsync();
+                return (false, "Session expired. Please log in again.", null, null);
+            }
+
+            string newAccessToken = GenerateJwtToken(user);
+            string newRefreshToken = GenerateRefreshToken();
+
+            user.PreviousRefreshToken = user.RefreshToken;
+            user.PreviousRefreshTokenExpiry = DateTime.UtcNow.AddSeconds(10);
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return (true, "Token renewed successfully!", newAccessToken, newRefreshToken);
+        }
+
+        // Case 2: just-rotated-out token, within grace window — benign race
+        if (user.PreviousRefreshToken == refreshToken && user.PreviousRefreshTokenExpiry > DateTime.UtcNow)
+        {
+            string newAccessToken = GenerateJwtToken(user);
+            await transaction.CommitAsync();
+            return (true, "Token renewed successfully!", newAccessToken, user.RefreshToken);
+        }
+
+        // Case 3: stale beyond grace window — kill the session
         user.RefreshToken = null;
-        user.RefreshTokenExpiryTime = DateTime.MinValue;
-
+        user.PreviousRefreshToken = null;
         await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
+    }
 
-        return true;
-    }
-    catch
+    public async Task<bool> RevokeRefreshTokenAsync(string refreshToken)
     {
-        return false;
+        try
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.RefreshToken == refreshToken);
+
+            if (user == null)
+            {
+                return false;
+            }
+
+            // Revoke the refresh token by clearing token and resetting expiry to a past value
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = DateTime.MinValue;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
-}
 }

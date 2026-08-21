@@ -22,4 +22,7 @@ public class User
 
     public ICollection<Message> ReceivedMessages { get; set; }
 
+     public string? PreviousRefreshToken { get; set; }
+    public DateTime? PreviousRefreshTokenExpiry { get; set; }
+
 }

@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams,useNavigate } from "react-router-dom";
 import PostCard from "./PostCard";
 import CreatePostCard from "./CreatePostCard";
-import { apiFetch } from "../api/apiClient";
-
+import { useGlobalContext } from "../context/GlobalContext";
 
 function SinglePost() {
     const { id } = useParams();

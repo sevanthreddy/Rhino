@@ -4,7 +4,6 @@ import { FaRegComment } from "react-icons/fa";
 import { useNavigate, useParams } from 'react-router-dom';
 import CommentCard from './Commentcard';
 import { getAssetUrl } from '../config';
-import { apiFetch } from '../api/apiClient';
 import { useGlobalContext } from "../context/GlobalContext";
 
 
