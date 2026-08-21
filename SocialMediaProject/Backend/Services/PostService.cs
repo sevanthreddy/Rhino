@@ -22,33 +22,29 @@ public class PostService : IPostService
         _blobStorage=blobStorageService;
     }
 
-    public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
-    {
-        var x = await _context.Posts
-            .Include(p => p.User) // Include the User navigation property
-            .OrderByDescending(p => p.CreatedAt)
-            .ToListAsync();
-        var datattorontend = x.Select(posts => new PostDto
+public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
+{
+    var result = await _context.Posts
+        .Include(p => p.User)
+        .OrderByDescending(p => p.CreatedAt)
+        .Select(p => new PostDto
         {
-            Id = posts.Id,
-            Content = posts.Content,
-            CreatedAt = posts.CreatedAt,
-            UserId = posts.UserId,
-            TimeAgo = posts.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"), // Format the timestamp as a string,
-            Initials = posts.User.Username.Length >= 2 ? posts.User.Username.Substring(0, 2).ToUpper() : posts.User.Username.ToUpper(), // Get the first two letters of the username in uppercase
-            Username = posts.User.Username, // Access the Username from the related User entity
-            LikeCount = _context.Likes.Where(p => p.Postid == posts.Id).Count(),
-            IsLiked = _context.Likes.Where(p => p.Postid == posts.Id && p.Userid == userid).Any(),
-            ImagesRelatedtoPost = _context.Images.Where(i => i.postid == posts.Id).Select(i => i.ImageURL).ToList(),
-            profileImage = posts.User.ProfileImageURL
-        });
-        for(int i=0;i<datattorontend.Count();i++)
-        {
-            Console.WriteLine("profile image url", datattorontend.ElementAt(i).profileImage);
-        }
+            Id = p.Id,
+            Content = p.Content,
+            CreatedAt = p.CreatedAt,
+            UserId = p.UserId,
+            TimeAgo = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+            Initials = p.User.Username.Length >= 2 ? p.User.Username.Substring(0, 2).ToUpper() : p.User.Username.ToUpper(),
+            Username = p.User.Username,
+            LikeCount = p.Likes.Count(),
+            IsLiked = p.Likes.Any(l => l.Userid == userid),
+            ImagesRelatedtoPost = p.Images.Select(i => i.ImageURL).ToList(),
+            profileImage = p.User.ProfileImageURL
+        })
+        .ToListAsync();
 
-        return datattorontend;
-    }
+    return result;
+}
 
     public async Task<PostDto> GetPostByIdAsync(int userid, int postid)
     {
