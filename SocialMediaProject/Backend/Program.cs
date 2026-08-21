@@ -69,7 +69,7 @@ builder.Services.AddScoped<IMessageService,MessageService>();
 builder.Services.AddScoped<INotificationService,NotificationService>();
 builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 builder.Services.AddSingleton<IPresenceService,PresenceService>();
-//builder.Services.AddSingleton<BlobStorageService>();
+builder.Services.AddSingleton<BlobStorageService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>

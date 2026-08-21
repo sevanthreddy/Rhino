@@ -17,35 +17,35 @@ public class PostsController : ControllerBase
         PostService = postService;
     }
 
-   [HttpGet]
-[AllowAnonymous]
-public async Task<IActionResult> GetPosts()
-{
-    Console.WriteLine("========== GET /api/Posts ==========");
-
-    try
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPosts()
     {
-        Console.WriteLine("Calling PostService...");
+        Console.WriteLine("========== GET /api/Posts ==========");
 
-        var posts = await PostService.GetPostsAsync(1);
-
-        Console.WriteLine("PostService returned successfully");
-
-        return Ok(posts);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("========== POSTS ERROR ==========");
-        Console.WriteLine(ex.ToString());
-
-        return StatusCode(500, new
+        try
         {
-            message = ex.Message,
-            stackTrace = ex.StackTrace,
-            inner = ex.InnerException?.ToString()
-        });
+            Console.WriteLine("Calling PostService...");
+
+            var posts = await PostService.GetPostsAsync(1);
+
+            Console.WriteLine("PostService returned successfully");
+
+            return Ok(posts);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("========== POSTS ERROR ==========");
+            Console.WriteLine(ex.ToString());
+
+            return StatusCode(500, new
+            {
+                message = ex.Message,
+                stackTrace = ex.StackTrace,
+                inner = ex.InnerException?.ToString()
+            });
+        }
     }
-}
 
     [HttpGet("post/{id}")]
     [AllowAnonymous]
