@@ -6,7 +6,7 @@ import { useGlobalContext } from "../context/GlobalContext";
 
 function NotificationsView() {
     const [notifications,setallnotifications]=useState([]);
-    const { accessToken } = useGlobalContext();
+    const { accessToken,apiFetch } = useGlobalContext();
 
     const fetchallNotifications = async () => {
         console.log("fetchallnotifications method started");

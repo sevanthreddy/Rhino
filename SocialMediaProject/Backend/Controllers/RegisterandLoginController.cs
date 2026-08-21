@@ -99,6 +99,9 @@ public class RegisterandLoginController : ControllerBase
         {
             Console.WriteLine("RefreshAccessToken method started");
             var refreshtoken = Request.Cookies["refreshToken"];
+            var refreshToken = Request.Cookies["refreshToken"];
+            Console.WriteLine($"🔥 COOKIE TOKEN: [{refreshToken}]");
+            Console.WriteLine($"🔥 COOKIE LENGTH: {refreshToken?.Length}");
             if (string.IsNullOrEmpty(refreshtoken))
             {
                 return Unauthorized("Refresh token not found.");
