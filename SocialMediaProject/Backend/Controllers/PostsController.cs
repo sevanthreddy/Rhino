@@ -66,7 +66,10 @@ public class PostsController : ControllerBase
         createPostDto.UserId = int.Parse(HttpContext.User.FindFirst("userId")!.Value);
 
         var createdPost = await PostService.CreatePostAsync(createPostDto);
-        return CreatedAtAction(nameof(GetPosts), new { id = createdPost.Id }, createdPost);
+        return Ok(new
+{
+    id = createdPost.Id
+});
     }
 
     [HttpPost("like/{postid}")]
