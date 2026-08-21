@@ -18,10 +18,7 @@ public class BlobStorageService
 
         var serviceClient = new BlobServiceClient(
             new Uri(namespaceUrl!),
-            new DefaultAzureCredential(new DefaultAzureCredentialOptions
-            {
-                ExcludeManagedIdentityCredential = true
-            })
+            new DefaultAzureCredential()
         );
         _logger=logger;
 
