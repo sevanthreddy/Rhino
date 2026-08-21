@@ -8,11 +8,13 @@ public class NotificationService : INotificationService
     private readonly ApplicationDbContext _context;
 
     private readonly IHubContext<ChatHub> _hubContext;
+    private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(ApplicationDbContext context,IHubContext<ChatHub> hubContext)
+    public NotificationService(ApplicationDbContext context,IHubContext<ChatHub> hubContext,ILogger<NotificationService> logger)
     {
         _context = context;
         _hubContext=hubContext;
+        _logger=logger;
     }
 
     public async Task CreateNotificationAsync(NotificationDto notification)
@@ -35,7 +37,7 @@ public class NotificationService : INotificationService
         }
         catch(Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "CREATE NOTIFICATION FAILED for receiver {ReceiverId}", notification.ReceiverId);
             return;
             
         }
@@ -63,7 +65,7 @@ public class NotificationService : INotificationService
         }
         catch(Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "GET NOTIFICATIONS FAILED for user {UserId}", userId);
             return Enumerable.Empty<NotificationDto>();
         }
     }

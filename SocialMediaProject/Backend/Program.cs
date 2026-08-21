@@ -22,9 +22,13 @@ builder.Services.Configure<AuthCookieOptions>(
 
 // === PHASE 1: REGISTER SERVICES (Must be BEFORE builder.Build()) ===
 builder.Services.AddControllers();
+var aiConnectionString =
+    builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+builder.Services.AddApplicationInsightsTelemetry();
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
+builder.Logging.AddConsole();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Backend API", Version = "v1" });
@@ -126,7 +130,22 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // ===================================================================
 
 var app = builder.Build();
-
+app.Logger.LogInformation(
+    "Application Insights connection string found: {Found}",
+    !string.IsNullOrWhiteSpace(aiConnectionString));
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Unhandled exception on {Path}", context.Request.Path);
+        throw; // keep default behavior/status code
+    }
+});
 // === PHASE 2: CONFIGURE PIPELINE (Must be AFTER builder.Build()) ===
 if (app.Environment.IsDevelopment())
 {

@@ -10,9 +10,12 @@ public class MessageController:ControllerBase
 {
 
     private readonly IMessageService _messageService;
-    public MessageController(IMessageService messageService)
+    private readonly ILogger<MessageController> _logger;
+
+    public MessageController(IMessageService messageService, ILogger<MessageController> logger)
     {
         _messageService=messageService;
+        _logger=logger;
         
     }
 
@@ -120,7 +123,7 @@ public class MessageController:ControllerBase
         }
         catch(Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "Failed to update message status for receiver {ReceiverId}", receiverid);
             return BadRequest("Something gone wrong");
         }
     }
@@ -144,12 +147,13 @@ public class MessageController:ControllerBase
     {
         try
         {
-            Console.WriteLine("search term in controller:", searchTerm);
+            _logger.LogInformation("Searching messages with term {SearchTerm}", searchTerm);
             var results = await _messageService.GetSearchResultsAsync(searchTerm, int.Parse(HttpContext.User.FindFirst("userId")!.Value));
             return Ok(results);
         }
-        catch
+        catch(Exception e)
         {
+            _logger.LogError(e, "Failed to search messages with term {SearchTerm}", searchTerm);
             return BadRequest(0);
         }
     }

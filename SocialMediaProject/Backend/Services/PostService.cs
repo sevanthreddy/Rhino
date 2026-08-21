@@ -11,14 +11,16 @@ public class PostService : IPostService
     private readonly INotificationService _notificationService;
 
     private readonly ServiceBusPublisher _servicebusPublisher;
+    private readonly ILogger<PostService> _logger;
     private readonly BlobStorageService _blobStorage;
 
 
-    public PostService(ApplicationDbContext context,INotificationService notificationService,ServiceBusPublisher serviceBusPublisher,BlobStorageService blobStorageService)
+    public PostService(ApplicationDbContext context,INotificationService notificationService,ServiceBusPublisher serviceBusPublisher,BlobStorageService blobStorageService,ILogger<PostService> logger)
     {
         _context = context;
         _notificationService=notificationService;
         _servicebusPublisher=serviceBusPublisher;
+        _logger=logger;
         _blobStorage=blobStorageService;
     }
 
@@ -29,7 +31,7 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
         var result = await _context.Posts
             .ToListAsync();
 
-        Console.WriteLine($"POST COUNT: {result.Count}");
+        _logger.LogInformation("Posts loaded: {Count}", result.Count);
 
         return result.Select(p => new PostDto
         {
@@ -41,8 +43,7 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
     }
     catch (Exception ex)
     {
-        Console.WriteLine("GET POSTS FAILED:");
-        Console.WriteLine(ex.ToString());
+        _logger.LogError(ex, "GET POSTS FAILED");
         throw;
     }
 }
@@ -115,8 +116,7 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
         try
         {
             var likestatus = await _context.Likes.Where(p => p.Postid == postid && p.Userid == userid).AnyAsync();
-            Console.WriteLine(likestatus);
-            Console.WriteLine(userid);
+            _logger.LogInformation("Like status for user {UserId} and post {PostId}: {LikeStatus}", userid, postid, likestatus);
             if (likestatus == true)
             {
                 var likeobj = _context.Likes.Where(p => p.Postid == postid && p.Userid == userid);
@@ -151,7 +151,7 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "LIKE POST FAILED for post {PostId} and user {UserId}", postid, userid);
             return (0, false);
         }
 

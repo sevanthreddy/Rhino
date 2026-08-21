@@ -12,31 +12,31 @@ using System.Security.Claims;
 public class PostsController : ControllerBase
 {
     public readonly IPostService PostService;
-    public PostsController(IPostService postService)
+    private readonly ILogger<PostsController> _logger;
+
+    public PostsController(IPostService postService, ILogger<PostsController> logger)
     {
         PostService = postService;
+        _logger = logger;
     }
 
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetPosts()
     {
-        Console.WriteLine("========== GET /api/Posts ==========");
+        _logger.LogInformation("GET POSTS STARTED");
 
         try
         {
-            Console.WriteLine("Calling PostService...");
-
             var posts = await PostService.GetPostsAsync(1);
 
-            Console.WriteLine("PostService returned successfully");
+            _logger.LogInformation("Posts loaded: {Count}", posts.Count());
 
             return Ok(posts);
         }
         catch (Exception ex)
         {
-            Console.WriteLine("========== POSTS ERROR ==========");
-            Console.WriteLine(ex.ToString());
+            _logger.LogError(ex, "GET POSTS FAILED");
 
             return StatusCode(500, new
             {

@@ -18,16 +18,19 @@ public class RegisterandLoginController : ControllerBase
     private readonly IAuthService _authService;
     private readonly ApplicationDbContext _context;
     private readonly AuthCookieOptions _cookieOptions;
+    private readonly ILogger<RegisterandLoginController> _logger;
 
     // Inject the AuthService instead of the DbContext!
     public RegisterandLoginController(
         IAuthService authService,
         ApplicationDbContext context,
-        IOptions<AuthCookieOptions> cookieOptions)
+        IOptions<AuthCookieOptions> cookieOptions,
+        ILogger<RegisterandLoginController> logger)
     {
         _authService = authService;
         _context = context;
         _cookieOptions = cookieOptions.Value;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -81,7 +84,7 @@ public class RegisterandLoginController : ControllerBase
         catch (Exception ex)
         {
 
-            Console.WriteLine(ex.ToString());
+            _logger.LogError(ex, "LOGIN FAILED");
 
             return StatusCode(500, new
             {
@@ -97,11 +100,10 @@ public class RegisterandLoginController : ControllerBase
     {
         try
         {
-            Console.WriteLine("RefreshAccessToken method started");
+            _logger.LogInformation("RefreshAccessToken method started");
             var refreshtoken = Request.Cookies["refreshToken"];
             var refreshToken = Request.Cookies["refreshToken"];
-            Console.WriteLine($"🔥 COOKIE TOKEN: [{refreshToken}]");
-            Console.WriteLine($"🔥 COOKIE LENGTH: {refreshToken?.Length}");
+            _logger.LogInformation("Refresh token cookie present: {HasRefreshToken}", !string.IsNullOrEmpty(refreshToken));
             if (string.IsNullOrEmpty(refreshtoken))
             {
                 return Unauthorized("Refresh token not found.");
@@ -121,7 +123,7 @@ public class RegisterandLoginController : ControllerBase
            Path = "/"
        }
    );
-                Console.WriteLine("RefreshAccessToken method ended {0}", res.NewRefreshToken);
+                _logger.LogInformation("RefreshAccessToken method completed successfully");
                 return Ok(new
                 {
                     success = res.Success,
@@ -136,7 +138,7 @@ public class RegisterandLoginController : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "REFRESH TOKEN FAILED");
             return BadRequest();
         }
 
@@ -198,7 +200,7 @@ public class RegisterandLoginController : ControllerBase
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"🎉 Automatically registered fresh Google user: {email}");
+                _logger.LogInformation("Automatically registered Google user {Email}", email);
             }
 
             //  5. Generate your OWN application's custom JWT authentication token
@@ -207,12 +209,14 @@ public class RegisterandLoginController : ControllerBase
             //  6. Send the application token back to React
             return Ok(new { token = myAppToken });
         }
-        catch (InvalidJwtException)
+        catch (InvalidJwtException ex)
         {
+            _logger.LogWarning(ex, "Invalid Google JWT received");
             return BadRequest("Invalid or tampered Google token configuration.");
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "GOOGLE LOGIN FAILED");
             return StatusCode(500, $"Internal server authentication error: {ex.Message}");
         }
     }

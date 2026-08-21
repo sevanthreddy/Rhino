@@ -10,18 +10,20 @@ public class ChatHub : Hub
 {
     private readonly IMessageService _messageService;
     private readonly IPresenceService _presenceService;
+    private readonly ILogger<ChatHub> _logger;
 
-    public ChatHub(IMessageService messageService, IPresenceService presenceService)
+    public ChatHub(IMessageService messageService, IPresenceService presenceService, ILogger<ChatHub> logger)
     {
         _messageService = messageService;
         _presenceService = presenceService;
+        _logger = logger;
     }
     public override async Task OnConnectedAsync()
     {
         var userId = Context.User?.FindFirst("userId")?.Value;
         await _presenceService.AddUserConnection(int.Parse(userId), Context.ConnectionId);
 
-        Console.WriteLine($"User {userId} connected.");
+        _logger.LogInformation("User {UserId} connected", userId);
         var x = await _presenceService.GetAllUsersOnline();
         await Clients.Caller.SendAsync("AllUsers", x);
         await Clients.All.SendAsync("UserOnline", userId);
@@ -30,7 +32,7 @@ public class ChatHub : Hub
     }
     public async Task SendMessage(int receiverid, string message)
     {
-        Console.WriteLine(message);
+        _logger.LogInformation("Sending chat message to user {ReceiverId}: {Message}", receiverid, message);
 
         var x = await _messageService.CreateMessageAsync(int.Parse(Context.User?.FindFirst("userId")?.Value), message, receiverid);
         if (x != null)
@@ -46,7 +48,7 @@ public class ChatHub : Hub
         var userId = Context.User?.FindFirst("userId")?.Value;
         // Called automatically when the connection closes
         await _presenceService.RemoveUserConnection(int.Parse(userId), Context.ConnectionId);
-        Console.WriteLine("user removed from onlineusers: " + userId);
+        _logger.LogInformation("User {UserId} removed from online users", userId);
         await Clients.All.SendAsync("UserOffline", userId);
 
         await base.OnDisconnectedAsync(exception);
@@ -54,44 +56,42 @@ public class ChatHub : Hub
 
     public async Task SendTypingMessage(int receiverid)
     {
-        Console.WriteLine("SendTyping Message method  started");
+        _logger.LogInformation("SendTypingMessage started for receiver {ReceiverId}", receiverid);
         var userId = Context.User?.FindFirst("userId")?.Value;
         await Clients.User(receiverid.ToString()).SendAsync("TypingMessage", userId);
-        Console.WriteLine("SendTyping Message method done");
+        _logger.LogInformation("SendTypingMessage completed for receiver {ReceiverId}", receiverid);
 
 
     }
 
     public async Task SendStopTypingMessage(int receiverid)
     {
-        Console.WriteLine("SendStopTyping Message started");
+        _logger.LogInformation("SendStopTypingMessage started for receiver {ReceiverId}", receiverid);
         var userId = Context.User?.FindFirst("userId")?.Value;
         await Clients.User(receiverid.ToString()).SendAsync("StopTypingMessage", userId);
-        Console.WriteLine("SendStopTyping Message method done");
+        _logger.LogInformation("SendStopTypingMessage completed for receiver {ReceiverId}", receiverid);
 
 
     }
 
     public async Task RegisterDeliveredMesssage(int messageId,int id)//id represents the person whose message has been delivered
     {
-        Console.WriteLine(messageId);
+        _logger.LogInformation("Registering delivered message {MessageId} for user {UserId}", messageId, id);
         var x = await _messageService.UpdateStatusAsync(messageId, "Delivered");//updating db 
         if (x)
         {
             await Clients.User(id.ToString()).SendAsync("DeliveredMessage",messageId);//sending the delivered status of msg to  id
         }
-        Console.WriteLine("RegisterDeliveredMesssage method completed");
+        _logger.LogInformation("RegisterDeliveredMessage completed for message {MessageId}", messageId);
     }
 
     public async Task RegisterReadMesssage(List<int> messageIds, int id)//id represents the person whose message has been read
     {
-        Console.WriteLine(messageIds);
-        Console.WriteLine(
-    $"Context user: {Context.User?.FindFirst("userId")?.Value}");
+        _logger.LogInformation("Registering {MessageCount} read messages for user {UserId}", messageIds.Count, id);
         foreach (var msgId in messageIds)
         {
             await Clients.User(id.ToString()).SendAsync("ReadMessage", msgId);//sending the read status of msg to  id
         }
-        Console.WriteLine("RegisterReadMesssage method completed"); 
+        _logger.LogInformation("RegisterReadMessage completed for user {UserId}", id); 
     }
 }

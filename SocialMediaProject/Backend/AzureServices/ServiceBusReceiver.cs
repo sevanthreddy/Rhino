@@ -7,15 +7,17 @@ public class ServicebusReceiver : BackgroundService
     private readonly ServiceBusProcessor _processor;
 
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ServicebusReceiver> _logger;
 
     public ServicebusReceiver(
         ServiceBusClient client,
-        IConfiguration configuration, IServiceScopeFactory scopeFactory)
+        IConfiguration configuration, IServiceScopeFactory scopeFactory, ILogger<ServicebusReceiver> logger)
     {
         var queueName = configuration["ServiceBus:NotificationQueue"];
 
         _processor = client.CreateProcessor(queueName);
         _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     protected override async Task ExecuteAsync(
@@ -37,7 +39,7 @@ public class ServicebusReceiver : BackgroundService
 
         if (notification == null)
         {
-            Console.WriteLine("Invalid notification message");
+            _logger.LogWarning("Received invalid notification message");
             return;
         }
 
@@ -49,14 +51,14 @@ public class ServicebusReceiver : BackgroundService
         await notificationService.CreateNotificationAsync(notification);
 
 
-        Console.WriteLine($"Received message: {body}");
+        _logger.LogInformation("Received notification message: {MessageBody}", body);
 
         await args.CompleteMessageAsync(args.Message);
     }
 
     private Task ProcessErrorAsync(ProcessErrorEventArgs args)
     {
-        Console.WriteLine($"Service Bus error: {args.Exception}");
+        _logger.LogError(args.Exception, "Service Bus processing error");
 
         return Task.CompletedTask;
     }

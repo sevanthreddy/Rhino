@@ -10,11 +10,13 @@ public class MessageService : IMessageService
     private readonly ApplicationDbContext _context;
 
     private readonly IConfiguration _configuration;
+    private readonly ILogger<MessageService> _logger;
 
-    public MessageService(ApplicationDbContext applicationDbContext,IConfiguration configuration)
+    public MessageService(ApplicationDbContext applicationDbContext,IConfiguration configuration,ILogger<MessageService> logger)
     {
         _context = applicationDbContext;
         _configuration=configuration;
+        _logger=logger;
     }
     public async Task<MessageDto> CreateMessageAsync(int senderid, string content, int receiverid)
     {
@@ -47,7 +49,7 @@ public class MessageService : IMessageService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "CREATE MESSAGE FAILED for sender {SenderId} and receiver {ReceiverId}", senderid, receiverid);
             return new MessageDto();
         }
     }
@@ -82,7 +84,7 @@ public class MessageService : IMessageService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "GET PREVIOUS CHATS FAILED for user {UserId}", mainid);
             return Enumerable.Empty<ChatInfoDto>();
 
         }
@@ -99,8 +101,9 @@ public class MessageService : IMessageService
             }).ToListAsync();
             return users;
         }
-        catch
+        catch (Exception e)
         {
+            _logger.LogError(e, "GET ALL USERS FAILED");
             return Enumerable.Empty<ChatInfoDto>();
         }
     }
@@ -109,7 +112,7 @@ public class MessageService : IMessageService
     {
         try
         {
-            Console.WriteLine($"GetMessagesBetweenUsersAsync called with senderid: {senderid}, receiverid: {receiverid}, lastmessageid: {lastmessageid}, numberofmessages: {numberofmessages}");
+            _logger.LogInformation("Getting messages between users {SenderId} and {ReceiverId}; last message {LastMessageId}; requested count {Count}", senderid, receiverid, lastmessageid, numberofmessages);
             var query = _context.Message.Where(m =>
     (m.SenderId == senderid && m.ReceiverId == receiverid) ||
     (m.SenderId == receiverid && m.ReceiverId == senderid));
@@ -136,8 +139,9 @@ public class MessageService : IMessageService
                 Status = m.Status
             });
         }
-        catch
+        catch (Exception e)
         {
+            _logger.LogError(e, "GET MESSAGES FAILED for sender {SenderId} and receiver {ReceiverId}", senderid, receiverid);
             return Enumerable.Empty<MessageDto>();
         }
     }
@@ -154,7 +158,7 @@ public class MessageService : IMessageService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "UPDATE MESSAGE STATUS FAILED for message {MessageId}", messageid);
             return false;
         }
 
@@ -173,7 +177,7 @@ public class MessageService : IMessageService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "UPDATE MESSAGE STATUSES FAILED for sender {SenderId} and receiver {ReceiverId}", senderid, receiverid);
             return Enumerable.Empty<int>();
         }
 
@@ -191,8 +195,9 @@ public class MessageService : IMessageService
 
             return listofsenders;
         }
-        catch
+        catch (Exception e)
         {
+            _logger.LogError(e, "GET UNREAD MESSAGES FAILED for user {UserId}", userid);
             return Enumerable.Empty<int>();
         }
     }
@@ -354,7 +359,7 @@ public class MessageService : IMessageService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "GET SEARCH RESULTS FAILED for user {UserId} and term {SearchTerm}", mainid, searchTerm);
             return Enumerable.Empty<SearchResultDto>();
         }
 
@@ -411,7 +416,7 @@ public class MessageService : IMessageService
 
     private async Task<List<int>> GetReleventMessagesFromLLMAsync(Dictionary<int, List<Message>> relevantMessages, string searchTerm, int mainid)
     {
-        Console.WriteLine("GetReleventMessagesFromLLMAsync method started");
+        _logger.LogInformation("GetRelevantMessagesFromLLMAsync method started");
         using var client = new HttpClient();
 
         var request = new
@@ -442,7 +447,7 @@ public class MessageService : IMessageService
         await response.Content.ReadFromJsonAsync<Dictionary<string, JsonElement>>();
 
         var rankedResults = result!["results"];
-        Console.WriteLine("Ranked results received from LLM: {0}", rankedResults.ToString());
+        _logger.LogInformation("Ranked results received from LLM: {Results}", rankedResults.ToString());
         var messageIds = new List<int>();
 
         foreach (var item in rankedResults.EnumerateArray())
@@ -450,11 +455,11 @@ public class MessageService : IMessageService
             int messageId = item.GetProperty("messageId").GetInt32();
             double score = item.GetProperty("score").GetDouble();
 
-            Console.WriteLine($"{messageId} => {score}");
+            _logger.LogInformation("Ranked message {MessageId} with score {Score}", messageId, score);
 
             messageIds.Add(messageId);
         }
-        Console.WriteLine("GetReleventMessagesFromLLMAsync method completed");
+        _logger.LogInformation("GetRelevantMessagesFromLLMAsync method completed");
         return messageIds;
 
     }

@@ -3,6 +3,12 @@ using System.Collections.Concurrent;
 public class PresenceService : IPresenceService
 {
     private readonly ConcurrentDictionary<int,HashSet<string>> _onlineusers=new(); 
+    private readonly ILogger<PresenceService> _logger;
+
+    public PresenceService(ILogger<PresenceService> logger)
+    {
+        _logger = logger;
+    }
     public async Task<bool> AddUserConnection(int userid,string connectionid)
     {
         try
@@ -16,7 +22,7 @@ public class PresenceService : IPresenceService
         }
         catch(Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "ADD USER CONNECTION FAILED for user {UserId}", userid);
             return false;
         }
         
@@ -28,8 +34,9 @@ public class PresenceService : IPresenceService
         {
             return _onlineusers.Keys.ToList();
         }
-        catch
+        catch (Exception e)
         {
+            _logger.LogError(e, "GET ONLINE USERS FAILED");
             return new List<int>();
         }
     }
@@ -54,7 +61,7 @@ public class PresenceService : IPresenceService
         }
         catch(Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "REMOVE USER CONNECTION FAILED for user {UserId}", userid);
             return false;
             
         }
