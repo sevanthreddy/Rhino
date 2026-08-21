@@ -11,7 +11,7 @@ public class PostService : IPostService
     private readonly INotificationService _notificationService;
 
     private readonly ServiceBusPublisher _servicebusPublisher;
-    private readonly BlobStorageService _blobStorage;
+    //private readonly BlobStorageService _blobStorage;
 
 
     public PostService(ApplicationDbContext context,INotificationService notificationService,ServiceBusPublisher serviceBusPublisher,BlobStorageService blobStorageService)
@@ -19,7 +19,7 @@ public class PostService : IPostService
         _context = context;
         _notificationService=notificationService;
         _servicebusPublisher=serviceBusPublisher;
-        _blobStorage=blobStorageService;
+        //_blobStorage=blobStorageService;
     }
 
 public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
@@ -92,11 +92,11 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
             foreach (var image in createPostDto.Images)
             {
                 var filename = Guid.NewGuid() + Path.GetExtension(image.FileName);
-                var imageUrl = await _blobStorage.UploadAsync(image, filename);
+                //var imageUrl = await _blobStorage.UploadAsync(image, filename);
                 images.Add(new Images
                 {
-                    postid = post.Id,
-                    ImageURL = imageUrl
+                    postid = post.Id
+                    //ImageURL = imageUrl
                 });
                 //var pathcombine = Path.Combine("wwwroot", "Uploads", filename);
                 //var filestream = new FileStream(pathcombine, FileMode.Create);
