@@ -15,21 +15,27 @@ public class ServicebusReceiver : BackgroundService
     {
         var queueName = configuration["ServiceBus:NotificationQueue"];
 
-        _processor = client.CreateProcessor(queueName);
+        _processor = client.CreateProcessor(queueName, new ServiceBusProcessorOptions
+        {
+            AutoCompleteMessages = false
+        });
         _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(
-        CancellationToken stoppingToken)
-    {
-        _processor.ProcessMessageAsync += ProcessMessageAsync;
-        _processor.ProcessErrorAsync += ProcessErrorAsync;
+   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+{
+    _logger.LogInformation("Service Bus receiver starting...");
 
-        await _processor.StartProcessingAsync(stoppingToken);
+    _processor.ProcessMessageAsync += ProcessMessageAsync;
+    _processor.ProcessErrorAsync += ProcessErrorAsync;
 
-        await Task.Delay(Timeout.Infinite, stoppingToken);
-    }
+    await _processor.StartProcessingAsync(stoppingToken);
+
+    _logger.LogInformation("Service Bus processor started.");
+
+    await Task.Delay(Timeout.Infinite, stoppingToken);
+}
 
     private async Task ProcessMessageAsync(
         ProcessMessageEventArgs args)

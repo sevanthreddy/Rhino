@@ -28,7 +28,7 @@ function Homepage() {
   const [fold, setfold] = useState(false);
   const { connection, setOnlineUsers, setConnection, setUser } = useGlobalContext();
   const isMobile = useMediaQuery({ maxWidth: 767 });
-  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, notifications, accessToken, setaccessToken,apiFetch } = useGlobalContext();
+  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, unreadnotificationsCount,setunreadnotificationsCount, accessToken, setaccessToken,apiFetch } = useGlobalContext();
 
 
   const fetchpostsfromdb = async () => {
@@ -195,7 +195,7 @@ function Homepage() {
             <div className='relative'>
               <IoNotificationsOutline className='mr-2 shrink-0'></IoNotificationsOutline>
               <div className="absolute -top-3 -right-2 bg-indigo-500 text-white text-[9px] rounded-full min-w-5  flex items-center justify-center">
-                {notifications.length > 0 ? notifications.length : ""}
+                {unreadnotificationsCount> 0 ? unreadnotificationsCount: ""}
               </div>
             </div>
             {fold == false && <button className='rounded-xl hover:bg-gray-100'>Notifications</button>}

@@ -5,16 +5,25 @@ using Microsoft.EntityFrameworkCore;
 
 public class ReplyService : IReplyService
 {
-    private readonly ApplicationDbContext _context; 
+    private readonly ApplicationDbContext _context;
 
-    public ReplyService(ApplicationDbContext applicationDbContext)
-    {
-        _context=applicationDbContext;
-    }
+    private readonly ServiceBusPublisher _servicebusPublisher;
+
+    private readonly ILogger<ReplyService> _logger;
+
+public ReplyService(
+    ApplicationDbContext applicationDbContext,
+    ServiceBusPublisher serviceBusPublisher,
+    ILogger<ReplyService> logger)
+{
+    _context = applicationDbContext;
+    _servicebusPublisher = serviceBusPublisher;
+    _logger = logger;
+}
 
     public async Task<IEnumerable<ReplyPostDto>> GetReplyPostDtosAsync(int postid)
     {
-        var x = await _context.Replies.Where(p=>p.PostId==postid)
+        var x = await _context.Replies.Where(p => p.PostId == postid)
             .Include(p => p.User) // Include the User navigation property
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
@@ -28,20 +37,37 @@ public class ReplyService : IReplyService
         });
 
         return datattorontend;
-         
+
     }
 
     public async Task<bool> CreateReplyAsync(CreateReplyPostDto createReplyPostDto)
     {
-        var reply=new Replies
+        try
         {
-            Content=createReplyPostDto.Content,
-            CreatedAt=DateTime.Now,
-            UserId=createReplyPostDto.UserId,
-            PostId=createReplyPostDto.Postid
+             var reply = new Replies
+        {
+            Content = createReplyPostDto.Content,
+            CreatedAt = DateTime.Now,
+            UserId = createReplyPostDto.UserId,
+            PostId = createReplyPostDto.Postid
         };
         await _context.Replies.AddAsync(reply);
-        var res=await _context.SaveChangesAsync();
+        var res = await _context.SaveChangesAsync();
+        var z=await _context.Posts.Where(P => P.Id == createReplyPostDto.Postid).Select(P => P.UserId).FirstOrDefaultAsync();
+        _logger.LogInformation(
+    "Sending comment notification. PostId: {PostId}, SenderId: {SenderId}, ReceiverId: {ReceiverId}",
+    createReplyPostDto.Postid,
+    createReplyPostDto.UserId,
+    z);
+        await _servicebusPublisher.SendAsync(new NotificationDto
+        {
+            Content = "Commented under Your Post",
+            Senderid = createReplyPostDto.UserId,
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow,
+            Type = "Comment",
+            ReceiverId = z
+        });
         if (createReplyPostDto.Images.Count > 0)
         {
             var images = new List<Images>();
@@ -52,7 +78,7 @@ public class ReplyService : IReplyService
                 {
                     //postid = createReplyPostDto.Postid,
                     ImageURL = filename,
-                    ReplyId=reply.Id
+                    ReplyId = reply.Id
                 });
                 var pathcombine = Path.Combine("wwwroot", "Uploads", filename);
                 var filestream = new FileStream(pathcombine, FileMode.Create);
@@ -61,10 +87,22 @@ public class ReplyService : IReplyService
             _context.Images.AddRange(images);
             await _context.SaveChangesAsync();
         }
-        if (res>0)
+        if (res > 0)
         {
             return true;
         }
-        return false; // Placeholder return value
+        return false;
+            
+        }catch (Exception ex)
+{
+    _logger.LogError(
+        ex,
+        "Failed to create reply notification for post {PostId} by user {UserId}",
+        createReplyPostDto.Postid,
+        createReplyPostDto.UserId);
+
+    return false;
+}
+        // Placeholder return value
     }
 }

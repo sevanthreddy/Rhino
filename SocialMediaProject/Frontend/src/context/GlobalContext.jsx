@@ -33,7 +33,9 @@ export function GlobalProvider({ children }) {
 
     const [listofNewMessageSenders, setListofNewMessageSenders] = useState([]);
 
-    const [notifications, setnotifications] = useState([]);
+    const [unreadnotificationsCount, setunreadnotificationsCount] = useState([]);
+
+    const [notifications,setnotifications]=useState([]);
 
     const [accessToken, setaccessToken] = useState(null);
 
@@ -739,9 +741,13 @@ export function GlobalProvider({ children }) {
 
 
                 // Notifications
-                notifications,
+                unreadnotificationsCount,
 
-                handleNotification
+                setunreadnotificationsCount,
+
+                notifications,
+                setnotifications
+
 
             }}
         >

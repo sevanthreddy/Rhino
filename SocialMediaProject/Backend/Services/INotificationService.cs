@@ -1,6 +1,6 @@
 public interface INotificationService
 {
     Task<IEnumerable<NotificationDto>> GetNotificationsForUserAsync(int userId);
-    Task MarkNotificationAsReadAsync(int notificationId);
-    Task CreateNotificationAsync(NotificationDto notification);
+    Task<bool> MarkNotificationAsReadAsync(int userid);
+    Task<bool> CreateNotificationAsync(NotificationDto notification);
 }
