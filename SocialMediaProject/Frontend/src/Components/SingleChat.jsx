@@ -18,7 +18,7 @@ function SingleChat() {
     const [text, settext] = useState("");
     const { selecteduser, fetchallchats } = useOutletContext();
     const navigate = useNavigate();
-    const { connection, latestMessage, getUnreadMessagesCount,apiFetch } = useGlobalContext();
+    const { connection, latestMessage, getUnreadMessagesCount,apiFetch,accessToken,userId } = useGlobalContext();
     const [isTyping, setisTyping] = useState(false);
     var timer = useRef(null);
     const pendingAcknowledgement = useRef(null);
@@ -254,17 +254,17 @@ console.log("SingleChat rendered");
 
                     messages.map((eachmessage) => (
                         <div key={eachmessage.messageId}
-                            className={`flex flex-1 mt-1 mr-3 ${eachmessage.senderId === Number(localStorage.getItem("userid"))
+                            className={`flex flex-1 mt-1 mr-3 ${eachmessage.senderId === Number(userId)
                                 ? "justify-end"
                                 : "justify-start"
                                 }`}>
-                            <div className={` p-1 text-sm rounded-xl leading-relaxed  font-bold ${eachmessage.senderId === Number(localStorage.getItem("userid"))
+                            <div className={` p-1 text-sm rounded-xl leading-relaxed  font-bold ${eachmessage.senderId === Number(userId)
                                 ? "bg-blue-500 text-white"
                                 : "bg-gray-200 text-black"
                                 }`}>
                                 {eachmessage.content}
                             </div>
-                            {eachmessage.senderId === Number(localStorage.getItem("userid")) && (
+                            {eachmessage.senderId === Number(userId) && (
                                 <>
                                     {eachmessage.status === "Sent" && <MdDone size={14} className="text-lg text-blue-300 mt-auto" />}
                                     {eachmessage.status === "Delivered" && <MdDoneAll size={14} className="text-lg mt-auto"></MdDoneAll>}

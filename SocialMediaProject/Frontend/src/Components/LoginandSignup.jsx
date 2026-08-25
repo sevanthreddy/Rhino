@@ -41,6 +41,7 @@ function LoginandSignup() {
   const {
     apiFetch,
     setLoginToken,
+    setUserId,
     setUser,
     accessToken,
     authLoading
@@ -190,6 +191,8 @@ function LoginandSignup() {
 
         const decodedUsername =
           decodedtoken.username;
+
+        setUserId(decodedtoken.userId);
 
 
         console.log(

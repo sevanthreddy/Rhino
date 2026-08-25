@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import * as signalR from "@microsoft/signalr";
+import { jwtDecode } from "jwt-decode";
 import { getApiUrl } from "../config";
 
 const GlobalContext = createContext();
@@ -38,6 +39,8 @@ export function GlobalProvider({ children }) {
     const [notifications,setnotifications]=useState([]);
 
     const [accessToken, setaccessToken] = useState(null);
+
+    const [userId, setUserId] = useState(null);
 
     // VERY IMPORTANT
     // Application should wait until we finish checking
@@ -99,6 +102,7 @@ export function GlobalProvider({ children }) {
                     );
 
                     setaccessToken(null);
+                    setUserId(null);
                     setUser(null);
 
                     return null;
@@ -123,6 +127,7 @@ export function GlobalProvider({ children }) {
                     );
 
                     setaccessToken(null);
+                    setUserId(null);
                     setUser(null);
 
                     return null;
@@ -136,6 +141,7 @@ export function GlobalProvider({ children }) {
 
                 // Store new access token in React state
                 setaccessToken(newAccessToken);
+                setUserIdFromToken(newAccessToken);
 
 
                 return newAccessToken;
@@ -149,6 +155,7 @@ export function GlobalProvider({ children }) {
                 );
 
                 setaccessToken(null);
+                setUserId(null);
                 setUser(null);
 
                 return null;
@@ -296,6 +303,19 @@ export function GlobalProvider({ children }) {
     };
 
 
+    const setUserIdFromToken = (token) => {
+
+        try {
+            const decodedToken = jwtDecode(token);
+            setUserId(decodedToken.userId);
+        }
+        catch (error) {
+            console.error("Unable to decode access token:", error);
+            setUserId(null);
+        }
+    };
+
+
     // =========================
     // LOGOUT
     // =========================
@@ -331,6 +351,8 @@ export function GlobalProvider({ children }) {
 
             // Clear frontend authentication
             setaccessToken(null);
+
+            setUserId(null);
 
             setUser(null);
 
@@ -437,6 +459,7 @@ export function GlobalProvider({ children }) {
         console.log(
             "🔥 RESTORE SESSION EFFECT RUNNING"
         );
+        
 
 
         const restoreSession = async () => {
@@ -464,6 +487,7 @@ export function GlobalProvider({ children }) {
                 );
 
                 setaccessToken(null);
+                setUserId(null);
                 setUser(null);
             }
 
@@ -703,6 +727,9 @@ export function GlobalProvider({ children }) {
                 // Authentication
                 user,
                 setUser,
+
+                userId,
+                setUserId,
 
                 accessToken,
                 setaccessToken,
