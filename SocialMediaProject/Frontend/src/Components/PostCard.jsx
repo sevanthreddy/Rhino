@@ -7,7 +7,7 @@ import { getAssetUrl } from '../config';
 import { useGlobalContext } from "../context/GlobalContext";
 
 
-function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
+function PostCard({ post, onProfileClick, oncommentclick, onClick,onLikeUpdated }) {
   const { id, username, initials, timeAgo, content, avatarColor = 'bg-blue-500', likeCount, isLiked,profileImage } = post;
   var imagesRelatedtoPost = post.imagesRelatedtoPost;
   const [likecountofpost, setlikecountofpost] = useState(likeCount);
@@ -29,6 +29,13 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
     console.log(data);
     if (response.ok) {
       setlikecountofpost(data.likeCount);
+      onLikeUpdated(
+        post.id,
+        data.likeCount,
+        data.result
+    );
+     
+
       liked === false ? setliked(true) : setliked(false);
     }
 
@@ -39,23 +46,30 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
     oncommentclick(post);
   }
 
-  const handleshare = async (e) => {
-    try {
-      e.stopPropagation();
-      if (navigator.share) {
-        await navigator.share({
-          title: "Post",
-          text: "Check Out this Post",
-          url: getApiUrl(`/api/home/post/${post.id}`)
-        })
-      } else {
-        console.log("Share not supported");
-      }
-    } catch(err) {
-      console.log("Share cancelled or failed", err);
+  const handleshare = (e) => {
+    e.stopPropagation();
+
+    const url = `${window.location.origin}/home/post/${post.id}`;
+
+    if (!navigator.share) {
+        console.log("Web Share API not supported");
+        return;
     }
 
-  }
+    navigator.share({
+        title: "Rhino Post",
+        text: "Check out this post!",
+        url: url
+    })
+    .then(() => {
+        console.log("Shared successfully");
+    })
+    .catch((err) => {
+        if (err.name !== "AbortError") {
+            console.error("Share failed:", err);
+        }
+    });
+};
 
   const handleProfileClick = (e) => {
     e.stopPropagation();

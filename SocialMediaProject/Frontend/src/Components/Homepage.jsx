@@ -169,6 +169,20 @@ function Homepage() {
     navigate("/home/notifications");
   }
 
+  const UpdatePostAfterLike = (postId, likeCount, isLiked) => {
+    setposts(prevPosts =>
+        prevPosts.map(post =>
+            post.id === postId
+                ? {
+                    ...post,
+                    likeCount: likeCount,
+                    isLiked: isLiked
+                }
+                : post
+        )
+    );
+};
+
   return (
     <div className='h-screen w-full overflow-hidden bg-[#FFF7E8]'>
       <div className='grid grid-cols-1 md:grid-cols-12!  h-full min-h-0'>
@@ -210,7 +224,7 @@ function Homepage() {
         <div className={`${fold ? "col-span-11" : "col-span-6"} h-full  min-h-0 overflow-y-auto  p-1`}>
           {fold == false && location.pathname === "/home" && <CreatePostCard oncreate={fetchpostsfromdb} createpost={handleCreatePost}></CreatePostCard>}
           {fold == false && location.pathname === "/home" && posts.map((everypost) => (
-            <PostCard key={everypost.id} onProfileClick={handleProfileClick} oncommentclick={handleCommentClick} post={everypost} onClick={() => handleClickPost(everypost.id)}></PostCard>
+            <PostCard key={everypost.id} onProfileClick={handleProfileClick} oncommentclick={handleCommentClick} post={everypost} onClick={() => handleClickPost(everypost.id)} onLikeUpdated={UpdatePostAfterLike}></PostCard>
           ))}
           <Outlet context={{ handleCreatePost, handleCommentClick, handleProfileClick, handleClickPost }}></Outlet>
         </div>
