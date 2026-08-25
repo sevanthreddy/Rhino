@@ -64,7 +64,7 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick }) {
 
   return (
     <div>
-      <div onClick={onClick} className='flex hover:bg-gray-100 border border-gray-200 p-2'>
+      <div onClick={onClick} className='flex hover:bg-gray-100 border border-gray-200 p-2 rounded-xl m-1 bg-white'>
         {/* Profile Header Row */}
         <div className='flex'>
           <div onClick={handleProfileClick} className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-bold cursor-pointer`}>

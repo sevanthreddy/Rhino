@@ -28,7 +28,7 @@ const CreatePostCard = ({ oncreate,createpost }) => {
     }
 
     return (
-        <div className="flex border border-gray-200 p-2">
+        <div className="flex border border-gray-200 p-2 rounded-xl m-1 bg-white">
             <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-white">
                 {localStorage.getItem("initials")}
             </div>

@@ -10,6 +10,7 @@ import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useGlobalContext } from "../context/GlobalContext";
 import { useMediaQuery } from "react-responsive";
 import { IoNotificationsOutline } from "react-icons/io5";
+import { FaHippo } from "react-icons/fa";
 
 
 
@@ -28,7 +29,7 @@ function Homepage() {
   const [fold, setfold] = useState(false);
   const { connection, setOnlineUsers, setConnection, setUser } = useGlobalContext();
   const isMobile = useMediaQuery({ maxWidth: 767 });
-  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, unreadnotificationsCount,setunreadnotificationsCount, accessToken, setaccessToken,apiFetch } = useGlobalContext();
+  const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, unreadnotificationsCount, setunreadnotificationsCount, accessToken, setaccessToken, apiFetch } = useGlobalContext();
 
 
   const fetchpostsfromdb = async () => {
@@ -79,7 +80,7 @@ function Homepage() {
   }
 
   useEffect(() => {
-    if(!accessToken){
+    if (!accessToken) {
       return
     }
     fetchpostsfromdb();
@@ -169,39 +170,44 @@ function Homepage() {
   }
 
   return (
-    <div className='h-screen w-full overflow-hidden'>
-      <div className='grid grid-cols-1 md:grid-cols-12!  h-full '>
-        {(!isMobile || !location.pathname.startsWith("/home/chat/")) && (<div className={`fixed bottom-0 left-0 right-0 md:static! flex flex-row justify-around md:flex-col! md:justify-start! rounded-xl ${fold ? "col-span-1" : "col-span-3"}`}>
-          <div onClick={handlehomeclick} className='flex  flex-row items-center hover:bg-gray-100 p-3'>
-            <MdHome className='mr-2 shrink-0'></MdHome>
-            {fold == false && <button className='rounded-xl font-bold'>Home</button>}
-          </div>
-          <div onClick={onlogout} className='flex flex-row items-center hover:bg-gray-100 p-3'>
-            <MdLogout className='mr-2 shrink-0'></MdLogout>
-            {fold == false && <button className='rounded-xl hover:bg-gray-100'>LogOut</button>}
-          </div>
-          <div onClick={handleChatClick} className='flex flex-row items-center hover:bg-gray-100 p-3 relative'>
-            <div className="relative inline-block">
-              <HiOutlineChatAlt2 className="mr-2 shrink-0" />
-
-              <div className="absolute -top-3 -right-2 bg-indigo-500 text-white text-[9px] rounded-full min-w-5  flex items-center justify-center">
-                {unreadMessagesCount > 0 ? unreadMessagesCount : ""}
-              </div>
+    <div className='h-screen w-full overflow-hidden bg-[#FFF7E8]'>
+      <div className='grid grid-cols-1 md:grid-cols-12!  h-full min-h-0'>
+        {(!isMobile || !location.pathname.startsWith("/home/chat/")) && (
+          <div className={`bg-[#FFFDF8]   shadow-lg m-1 fixed bottom-0 left-0 right-0 md:static! flex flex-row justify-around md:flex-col! md:justify-start! rounded-xl ${fold ? "col-span-1" : "col-span-3"}`}>
+            <div className='flex  flex-row items-center hover:bg-gray-100 p-3'>
+              <FaHippo className="text-[#FF8A00] text-2xl mr-2" />
+              {fold == false && <span className="hidden md:block! bg-gradient-to-r from-[#FFB300] to-[#FF7A00] bg-clip-text text-transparent font-bold "> Rhino </span>}
             </div>
-            {fold == false && <button className='rounded-xl hover:bg-gray-100'>Chat</button>}
-
-          </div>
-          <div onClick={handleNotificationsClick} className='flex flex-row items-center hover:bg-gray-100 p-3'>
-            <div className='relative'>
-              <IoNotificationsOutline className='mr-2 shrink-0'></IoNotificationsOutline>
-              <div className="absolute -top-3 -right-2 bg-indigo-500 text-white text-[9px] rounded-full min-w-5  flex items-center justify-center">
-                {unreadnotificationsCount> 0 ? unreadnotificationsCount: ""}
-              </div>
+            <div onClick={handlehomeclick} className='flex  flex-row items-center hover:bg-gray-100 p-3'>
+              <MdHome className='mr-2 shrink-0'></MdHome>
+              {fold == false && <button className='hidden md:block! rounded-xl font-bold'>Home</button>}
             </div>
-            {fold == false && <button className='rounded-xl hover:bg-gray-100'>Notifications</button>}
-          </div>
-        </div>)}
-        <div className={`${fold ? "col-span-11" : "col-span-6"} h-full  overflow-y-auto`}>
+            <div onClick={onlogout} className='flex flex-row items-center hover:bg-gray-100 p-3'>
+              <MdLogout className='mr-2 shrink-0'></MdLogout>
+              {fold == false && <button className='hidden md:block! rounded-xl hover:bg-gray-100'>LogOut</button>}
+            </div>
+            <div onClick={handleChatClick} className='flex flex-row items-center hover:bg-gray-100 p-3 relative'>
+              <div className="relative inline-block">
+                <HiOutlineChatAlt2 className="mr-2 shrink-0" />
+
+                <div className="absolute -top-3 -right-2 bg-indigo-500 text-white text-[9px] rounded-full min-w-5  flex items-center justify-center">
+                  {unreadMessagesCount > 0 ? unreadMessagesCount : ""}
+                </div>
+              </div>
+              {fold == false && <button className='hidden md:block! rounded-xl hover:bg-gray-100'>Chat</button>}
+
+            </div>
+            <div onClick={handleNotificationsClick} className='flex flex-row items-center hover:bg-gray-100 p-3'>
+              <div className='relative'>
+                <IoNotificationsOutline className='mr-2 shrink-0'></IoNotificationsOutline>
+                <div className="absolute -top-3 -right-2 bg-indigo-500 text-white text-[9px] rounded-full min-w-5  flex items-center justify-center">
+                  {unreadnotificationsCount > 0 ? unreadnotificationsCount : ""}
+                </div>
+              </div>
+              {fold == false && <button className='hidden md:block! rounded-xl hover:bg-gray-100'>Notifications</button>}
+            </div>
+          </div>)}
+        <div className={`${fold ? "col-span-11" : "col-span-6"} h-full  min-h-0 overflow-y-auto  p-1`}>
           {fold == false && location.pathname === "/home" && <CreatePostCard oncreate={fetchpostsfromdb} createpost={handleCreatePost}></CreatePostCard>}
           {fold == false && location.pathname === "/home" && posts.map((everypost) => (
             <PostCard key={everypost.id} onProfileClick={handleProfileClick} oncommentclick={handleCommentClick} post={everypost} onClick={() => handleClickPost(everypost.id)}></PostCard>

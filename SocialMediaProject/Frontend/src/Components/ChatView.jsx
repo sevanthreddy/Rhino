@@ -121,18 +121,19 @@ function ChatView() {
     };
 
     return (
-        <div className="h-full w-full  overflow-hidden">
-            <div className="h-full  grid grid-cols-12 w-full">
-                <div className={`${userid ? "hidden md:block! md:col-span-3" : "col-span-12 md:col-span-3!"}`}>
+        <div className="h-full w-full min-h-0 bg-[#FFF9ED] rounded-xl shadow-lg">
+            <div className="h-full min-h-0 grid grid-cols-12 w-full  gap-2">
+                <div className={`${userid ? "  hidden md:block! md:col-span-3" : "col-span-12 md:col-span-3!"} h-full rounded-xl min-h-0 flex flex-col shadow-lg p-1 border bg-[#FFFCF5] border-[#F3DFC0]`}>
                     <div>{/*section for searching messages*/}
-                        <div className="flex items-center gap-2 p-2 border-l border-r border-t border-gray-200">
+                        <div className="flex items-center gap-2 p-2 ">
                             <input type="text" placeholder="Search Messages" onChange={handleSearchChange} className="w-full p-1 border border-gray-300 rounded-md" />
 
                         </div>
                     </div>
-                    {searchResults.length <= 0 && <div className="md:col-span-3!  col-span-12  flex flex-col  border border-gray-200 h-full p-2">{/*section for showing  all chats*/}
+                    {searchResults.length <= 0 &&
+                     <div className="md:col-span-3! col-span-12 flex flex-col  flex-1 min-h-0 p-2 overflow-y-auto">{/*section for showing all chats*/}
                         {allchats && allchats.map((eachchat) => (
-                            <div key={eachchat.userid} onClick={() => { handleClickAChat(eachchat.userid, eachchat.name) }} className="flex  items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200">
+                            <div key={eachchat.userid} onClick={() => { handleClickAChat(eachchat.userid, eachchat.name) }} className="flex items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200">
                                 <div className="size-4 sm:size-7 md:size-8 bg-gray-400 rounded-3xl relative">
                                     {eachchat.profilePicture && (
                                         <img src={getAssetUrl(`/uploads/${eachchat.profilePicture}`)} className="w-full h-full rounded-3xl" />
@@ -153,9 +154,9 @@ function ChatView() {
                             </div>
                         ))}
                     </div>}
-                    {searchResults.length > 0 && <div className="md:col-span-3!  col-span-12  flex flex-col  border border-gray-200 h-screen p-2 overflow-y-auto">{/*section for showing  search results*/}
+                    {searchResults.length > 0 && <div className="md:col-span-3! col-span-12 flex flex-col border border-gray-200 flex-1 min-h-0 p-2 overflow-y-auto">{/*section for showing search results*/}
                         {searchResults.map((result) => (
-                            <div key={result.messageid} className="flex  items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200" onClick={() => { handleClickAChat(result.userid, result.name) }}>
+                            <div key={result.messageid} className="flex items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200" onClick={() => { handleClickAChat(result.userid, result.name) }}>
                                 <div className="size-4 sm:size-7 md:size-8 bg-gray-400 rounded-3xl"></div>
                                 <div className="text-sm md:text-lg!">{result.name}</div>
                                 <div className="text-sm ml-auto">{result.content}</div>
@@ -167,10 +168,10 @@ function ChatView() {
                     className={`${userid
                             ? "col-span-12"
                             : "hidden md:block!"
-                        } md:col-span-9! h-full min-h-0 md:border md:border-gray-200`}
+                        } md:col-span-9! h-full min-h-0 rounded-xl border-[#F3DFC0] md:border md:border-gray-200`}
                 >{/*section for showing selected chat*/}
                     <Outlet context={{ selecteduser, fetchallchats }} />
-                    {location.pathname == '/home/chat' && <div className=" flex h-full items-center justify-center">
+                    {location.pathname == '/home/chat' && <div className="rounded-xl flex h-full items-center justify-center">
                         <div className="flex flex-col items-center">
                             <HiOutlineChatAlt2 className='mb-4'></HiOutlineChatAlt2>
                             <button onClick={handleStartChat} className="hover:bg-gray-200 p-2 bg-gray-100 cursor-pointer rounded-xl">Start A Chat</button>
