@@ -221,7 +221,7 @@ function Homepage() {
               {fold == false && <button className='hidden md:block! rounded-xl hover:bg-gray-100'>Notifications</button>}
             </div>
           </div>)}
-        <div className={`${fold ? "col-span-11" : "col-span-6"} h-full  min-h-0 overflow-y-auto  p-1`}>
+        <div className={`${fold ? "col-span-11" : "col-span-6"} h-dvh  min-h-0 overflow-y-auto  p-1`}>
           {fold == false && location.pathname === "/home" && <CreatePostCard oncreate={fetchpostsfromdb} createpost={handleCreatePost}></CreatePostCard>}
           {fold == false && location.pathname === "/home" && posts.map((everypost) => (
             <PostCard key={everypost.id} onProfileClick={handleProfileClick} oncommentclick={handleCommentClick} post={everypost} onClick={() => handleClickPost(everypost.id)} onLikeUpdated={UpdatePostAfterLike}></PostCard>
