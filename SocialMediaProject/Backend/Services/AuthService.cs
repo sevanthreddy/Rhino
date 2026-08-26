@@ -12,10 +12,12 @@ namespace Backend.Services;
 public class AuthService : IAuthService
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(ApplicationDbContext context)
+    public AuthService(ApplicationDbContext context, ILogger<AuthService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<(bool Success, string Message)> RegisterUserAsync(RegisterDto registerDto)
@@ -23,12 +25,14 @@ public class AuthService : IAuthService
         // 1. Check Username
         if (await _context.Users.AnyAsync(u => u.Username == registerDto.Username.Trim().ToLower()))
         {
+            _logger.LogWarning("Registration rejected because username already exists: {Username}", registerDto.Username);
             return (false, "Username already exists");
         }
 
         // 2. Check Email
         if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email.ToLower().Trim()))
         {
+            _logger.LogWarning("Registration rejected because email already exists: {Email}", registerDto.Email);
             return (false, "Email address already exists");
         }
         string securePasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password, workFactor: 12);
@@ -42,6 +46,7 @@ public class AuthService : IAuthService
 
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation("User registered successfully: {Username}", registerDto.Username);
         return (true, "User registered successfully");
     }
 
@@ -52,12 +57,14 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
+            _logger.LogWarning("Login rejected for unknown identifier: {Identifier}", loginDto.Identifier);
             return (false, "Invalid username/email or password", null, null);
         }
 
         // Check if the password matches
         if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
         {
+            _logger.LogWarning("Login rejected because password verification failed for user {UserId}", user.Id);
             return (false, "Invalid username/email or password", null, null);
         }
         string refreshToken = GenerateRefreshToken();
@@ -65,6 +72,7 @@ public class AuthService : IAuthService
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
+        _logger.LogInformation("User logged in successfully: {UserId}", user.Id);
         return (true, "Login successful", GenerateJwtToken(user), user.RefreshToken);
     }
 
@@ -131,6 +139,7 @@ public class AuthService : IAuthService
 
     public async Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)> RefreshTokenAsync(string refreshToken)
     {
+        _logger.LogInformation("refresh token from frontend:{0}",refreshToken);   
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         // UPDLOCK+ROWLOCK: any other request trying to touch this same row
@@ -144,15 +153,17 @@ public class AuthService : IAuthService
         if (user == null)
         {
             await transaction.RollbackAsync();
+            _logger.LogWarning("Refresh rejected because the token was not associated with a user");
             return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
         }
-
+        _logger.LogInformation("refreshtoken from database {0}",user.RefreshToken);
         // Case 1: current token — rotate normally
         if (user.RefreshToken == refreshToken)
         {
             if (user.RefreshTokenExpiryTime <= DateTime.UtcNow)
             {
                 await transaction.RollbackAsync();
+                _logger.LogWarning("Refresh rejected because the session expired for user {UserId}", user.Id);
                 return (false, "Session expired. Please log in again.", null, null);
             }
 
@@ -166,6 +177,7 @@ public class AuthService : IAuthService
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
+            _logger.LogInformation("Refresh token rotated for user {UserId}", user.Id);
             return (true, "Token renewed successfully!", newAccessToken, newRefreshToken);
         }
 
@@ -174,6 +186,7 @@ public class AuthService : IAuthService
         {
             string newAccessToken = GenerateJwtToken(user);
             await transaction.CommitAsync();
+            _logger.LogInformation("Refresh token grace window used for user {UserId}", user.Id);
             return (true, "Token renewed successfully!", newAccessToken, user.RefreshToken);
         }
 
@@ -182,6 +195,7 @@ public class AuthService : IAuthService
         user.PreviousRefreshToken = null;
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        _logger.LogWarning("Stale refresh token revoked and session cleared for user {UserId}", user.Id);
         return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
     }
 
@@ -194,6 +208,7 @@ public class AuthService : IAuthService
 
             if (user == null)
             {
+                _logger.LogWarning("Refresh token revocation requested for an unknown session");
                 return false;
             }
 
@@ -203,10 +218,12 @@ public class AuthService : IAuthService
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Refresh token revoked for user {UserId}", user.Id);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Refresh token revocation failed");
             return false;
         }
     }
