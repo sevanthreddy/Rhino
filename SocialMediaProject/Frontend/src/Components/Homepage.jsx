@@ -184,7 +184,7 @@ function Homepage() {
 };
 
   return (
-    <div className='h-screen w-full overflow-hidden bg-[#FFF7E8]'>
+    <div className='h-dvh w-full overflow-hidden bg-[#FFF7E8]'>
       <div className='grid grid-cols-1 md:grid-cols-12!  h-full min-h-0'>
         {(!isMobile || !location.pathname.startsWith("/home/chat/")) && (
           <div className={`bg-[#FFFDF8]   shadow-lg m-1 fixed bottom-0 left-0 right-0 md:static! flex flex-row justify-around md:flex-col! md:justify-start! rounded-xl ${fold ? "col-span-1" : "col-span-3"}`}>
@@ -221,7 +221,7 @@ function Homepage() {
               {fold == false && <button className='hidden md:block! rounded-xl hover:bg-gray-100'>Notifications</button>}
             </div>
           </div>)}
-        <div className={`${fold ? "col-span-11" : "col-span-6"} h-dvh  min-h-0 overflow-y-auto  p-1`}>
+        <div className={`${fold ? "col-span-11" : "col-span-6"} h-full  min-h-0 overflow-y-auto  p-1`}>
           {fold == false && location.pathname === "/home" && <CreatePostCard oncreate={fetchpostsfromdb} createpost={handleCreatePost}></CreatePostCard>}
           {fold == false && location.pathname === "/home" && posts.map((everypost) => (
             <PostCard key={everypost.id} onProfileClick={handleProfileClick} oncommentclick={handleCommentClick} post={everypost} onClick={() => handleClickPost(everypost.id)} onLikeUpdated={UpdatePostAfterLike}></PostCard>
