@@ -13,7 +13,7 @@ public class User
     public string? ProfileImageURL { get; set; }
     public string? About { get; set; }
     public string? Name { get; set; }
-    public string RefreshToken { get; set; } = string.Empty;
+    public string? RefreshToken { get; set; } = string.Empty;
     public DateTime RefreshTokenExpiryTime { get; set; }
     public ICollection<Follow> Followers { get; set; } = new List<Follow>();
     public ICollection<Follow> Following { get; set; } = new List<Follow>();
