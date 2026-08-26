@@ -240,16 +240,16 @@ console.log("SingleChat rendered");
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-0">
 
-            <div className="h-10 border-b border-gray-200 flex items-center">
+            <div className="h-10 shrink-0 border-b border-gray-200 flex items-center">
                 <button onClick={handlebackbuttonclick} className=" flex items-center justify-center rounded-full hover:bg-gray-200 cursor-pointer p-2">
                     <MdArrowBack size={16} />
                 </button>
                 {selecteduser}
             </div>
 
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto min-h-0">
                 {messages &&
 
                     messages.map((eachmessage) => (
@@ -278,13 +278,13 @@ console.log("SingleChat rendered");
 
             </div>
 
-            <div className="w-full rounded-xl  h-10 flex">
+            <div className="w-full rounded-xl  h-10 shrink-0 flex">
                 <textarea onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault(); // Prevent a new line
                         handleSendMsg();
                     }
-                }} value={text} onChange={handleOnChangeInTextBox} className="bg-gray-200 flex-1 rounded-xl h-10 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                }} value={text} onChange={handleOnChangeInTextBox} className="bg-gray-200 flex-1 rounded-xl h-10  outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </textarea>
                 <button className="p-2 bg-blue-500 rounded-xl text-white cursor-pointer" onClick={handleSendMsg}>
                     <MdSend size={22} />

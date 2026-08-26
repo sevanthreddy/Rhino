@@ -168,7 +168,7 @@ function ChatView() {
                     className={`${userid
                             ? "col-span-12"
                             : "hidden md:block!"
-                        } md:col-span-9! h-full min-h-0 rounded-xl border-[#F3DFC0] md:border md:border-gray-200`}
+                        } md:col-span-9! h-full min-h-0 rounded-xl border-[#F3DFC0] md:border md:border-gray-200 overflow-hidden`}
                 >{/*section for showing selected chat*/}
                     <Outlet context={{ selecteduser, fetchallchats }} />
                     {location.pathname == '/home/chat' && <div className="rounded-xl flex h-full items-center justify-center">
