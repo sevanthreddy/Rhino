@@ -31,6 +31,21 @@ function Homepage() {
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, unreadnotificationsCount, setunreadnotificationsCount, accessToken, setaccessToken, apiFetch } = useGlobalContext();
 
+  useEffect(() => {
+    const setAppHeight = () => {
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${vh}px`);
+    };
+
+    setAppHeight();
+    window.visualViewport?.addEventListener('resize', setAppHeight);
+    window.addEventListener('resize', setAppHeight);
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', setAppHeight);
+      window.removeEventListener('resize', setAppHeight);
+    };
+  }, []);
 
   const fetchpostsfromdb = async () => {
     const response = await apiFetch(('/api/Posts'), {
@@ -184,7 +199,7 @@ function Homepage() {
 };
 
   return (
-    <div className='h-dvh w-full overflow-hidden bg-[#FFF7E8]'>
+    <div className='h-[var(--app-height,100dvh)] w-full overflow-hidden bg-[#FFF7E8]'>
       <div className='grid grid-cols-1 md:grid-cols-12!  h-full min-h-0'>
         {(!isMobile || !location.pathname.startsWith("/home/chat/")) && (
           <div className={`bg-[#FFFDF8]   shadow-lg m-1 fixed bottom-0 left-0 right-0 md:static! flex flex-row justify-around md:flex-col! md:justify-start! rounded-xl ${fold ? "col-span-1" : "col-span-3"}`}>
