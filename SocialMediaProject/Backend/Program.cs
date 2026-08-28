@@ -125,7 +125,13 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 // Moved up here! Now .NET knows about the database before building the app
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null)
+    ));
 
 // ===================================================================
 
