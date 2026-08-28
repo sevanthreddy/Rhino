@@ -96,7 +96,7 @@ public class AuthService : IAuthService
         return tokenHandler.WriteToken(token);
     }
 
-    private string GenerateRefreshToken()
+    public string GenerateRefreshToken()
     {
         var randomNumber = new byte[32];
         using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())

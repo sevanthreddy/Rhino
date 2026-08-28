@@ -205,6 +205,26 @@ public class RegisterandLoginController : ControllerBase
 
             //  5. Generate your OWN application's custom JWT authentication token
             var myAppToken = _authService.GenerateJwtToken(user);
+            var refreshToken = _authService.GenerateRefreshToken();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime =
+            DateTime.UtcNow.AddDays(7);
+
+            await _context.SaveChangesAsync();
+
+            // Return refresh token as HttpOnly cookie
+            Response.Cookies.Append(
+                "refreshToken",
+                refreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+                }
+            );
+
 
             //  6. Send the application token back to React
             return Ok(new { token = myAppToken });

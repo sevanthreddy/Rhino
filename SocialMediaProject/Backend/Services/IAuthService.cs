@@ -12,4 +12,5 @@ public interface IAuthService
     Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)> RefreshTokenAsync(string refreshToken);
 
     Task<bool> RevokeRefreshTokenAsync(string refreshtoken);
+    string GenerateRefreshToken();
 }

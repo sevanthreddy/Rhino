@@ -5,47 +5,21 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../Slices/AuthSlice";
 import { useGlobalContext } from "../context/GlobalContext";
+import { GoogleLogin } from "@react-oauth/google";
 
 
 function LoginandSignup() {
 
-  const [username, setusername] =
-    useState("");
+  const [username, setusername] = useState("");
+  const [email, setemail] = useState(""); const [password, setpassword] = useState("");
+  const [loggedin, setloggedin] = useState(false);
+  const [authmode, setauthmode] = useState("login");
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const trial = useSelector((state) => state.auth.username);
+  
 
-  const [email, setemail] =
-    useState("");
-
-  const [password, setpassword] =
-    useState("");
-
-  const [loggedin, setloggedin] =
-    useState(false);
-
-  const [authmode, setauthmode] =
-    useState("login");
-
-
-  const navigate =
-    useNavigate();
-
-  const dispatch =
-    useDispatch();
-
-
-  const trial =
-    useSelector(
-      (state) => state.auth.username
-    );
-
-
-  const {
-    apiFetch,
-    setLoginToken,
-    setUserId,
-    setUser,
-    accessToken,
-    authLoading
-  } = useGlobalContext();
+  const { apiFetch, setLoginToken, setUserId, setUser, accessToken, authLoading,setaccessToken } = useGlobalContext();
 
 
   // =========================
@@ -348,6 +322,34 @@ function LoginandSignup() {
     );
   }
 
+  const handleGoogleSuccess=async (credentialResponse)=>{
+    console.log("🚀 Google Login Token Received:", credentialResponse);
+              try {
+                const response = await fetch("http://localhost:5040/api/RegisterandLogin/google-login", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "include",
+                  body: JSON.stringify({ Token: credentialResponse.credential })
+                });
+
+                const contentType = response.headers.get("content-type");
+                let data = contentType && contentType.includes("application/json") ? await response.json() : await response.text();
+
+                if (response.ok) {
+                  console.log("🎯 Backend Google Login Success:", data);
+                  setaccessToken(data.token);
+                  navigate("/home"); 
+                  alert("Logged in with Google successfully!");
+                } else {
+                  console.log("⚠️ Backend rejected Google token:", data);
+                  alert(`Google login failed on server: ${data}`);
+                }
+              } catch (err) {
+                console.error("💥 Network error connecting to backend:", err);
+              }
+
+  }
+
 
   // =========================
   // UI
@@ -355,96 +357,51 @@ function LoginandSignup() {
 
   return (
 
-    <div className="min-h-screen bg-slate-900 border">
+    <div className="min-h-screen bg-slate-900 border ">
 
-      <div className="flex justify-center items-center flex-col text-white mt-32">
+      <div className="flex justify-center items-center flex-col text-white mt-32 -translate-y-10">
 
         <h1 className="text-2xl">
           Log in to Rhino
         </h1>
 
 
-        <form
-          onSubmit={handleOnSubmit}
-          className="flex justify-center items-center flex-col text-white w-full max-w-sm"
-        >
+        <form onSubmit={handleOnSubmit} className="flex justify-center items-center flex-col text-white w-full max-w-sm" >
 
-          {authmode === "Create" && (
-
-            <input
-              onChange={(e) => {
-
-                setusername(
-                  e.target.value
-                );
-
-              }}
-
-              value={username}
-
-              placeholder="Enter Username"
-
-              className="w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500"
-            />
-
-          )}
+          {authmode === "Create" &&
+            (<input onChange={(e) => { setusername(e.target.value); }} value={username} placeholder="Enter Username"
+              className="w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500" />)}
+          <input onChange={(e) => { setemail(e.target.value); }} value={email} placeholder="Enter Email Address or Username"
+            className="w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500" />
 
 
-          <input
-
-            onChange={(e) => {
-
-              setemail(
-                e.target.value
-              );
-
-            }}
-
-            value={email}
-
-            placeholder="Enter Email Address or Username"
-
-            className="w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500"
-
-          />
+          <input type="password" onChange={(e) => { setpassword(e.target.value); }} value={password} placeholder="Password"
+            className="w-full border border-slate-800 rounded-xl p-3 m-2 outline-none focus:border-blue-500" />
 
 
-          <input
+          <button type="submit" className="rounded-2xl w-full p-2 m-2 bg-blue-700 hover:bg-blue-500" >
+            {authmode === "Create" ? "Sign Up" : "Log In"} </button>
+          {/* Google login - only show on Login */}
+          {authmode !== "Create" && (
+            <>
+              <div className="flex items-center w-full my-3">
+                <div className="flex-1 border-t border-slate-700"></div>
 
-            type="password"
+                <span className="px-3 text-sm text-slate-400">
+                  OR
+                </span>
 
-            onChange={(e) => {
+                <div className="flex-1 border-t border-slate-700"></div>
+              </div>
 
-              setpassword(
-                e.target.value
-              );
-
-            }}
-
-            value={password}
-
-            placeholder="Password"
-
-            className="w-full border border-slate-800 rounded-xl p-3 m-2 outline-none focus:border-blue-500"
-
-          />
-
-
-          <button
-
-            type="submit"
-
-            className="rounded-2xl w-full p-2 m-2 bg-blue-700 hover:bg-blue-500"
-
-          >
-
-            {
-              authmode === "Create"
-                ? "Sign Up"
-                : "Log In"
-            }
-
-          </button>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  console.log("Google Login Failed");
+                }}
+                width="100"
+              />
+            </>)}
 
         </form>
 
@@ -463,23 +420,9 @@ function LoginandSignup() {
 
 
         <div>
-
-          <button
-
-            onClick={handlechoice}
-
-            className="hover:underline text-blue-400 cursor-pointer"
-
-          >
-
-            {
-              authmode === "Create"
-                ? "Log In"
-                : "Create an Account"
-            }
-
+          <button onClick={handlechoice} className="hover:underline text-blue-400 cursor-pointer" >
+            {authmode === "Create" ? "Log In" : "Create an Account"}
           </button>
-
         </div>
 
       </div>
