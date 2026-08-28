@@ -617,7 +617,7 @@ export function GlobalProvider({ children }) {
 
             if (
                 message.senderId !==
-                Number(localStorage.getItem("userid"))
+                Number(userId)
             ) {
 
                 try {

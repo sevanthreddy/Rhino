@@ -35,7 +35,7 @@ console.log("SingleChat rendered");
 
             if (
                 latestMessage.senderId !== Number(userid) &&
-                latestMessage.senderId !== Number(localStorage.getItem("userid"))
+                latestMessage.senderId !== Number(userId)
             ) {
                 return;
             }
