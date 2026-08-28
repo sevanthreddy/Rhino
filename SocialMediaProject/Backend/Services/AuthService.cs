@@ -139,64 +139,70 @@ public class AuthService : IAuthService
 
     public async Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)> RefreshTokenAsync(string refreshToken)
     {
-        _logger.LogInformation("refresh token from frontend:{0}",refreshToken);   
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        _logger.LogInformation("refresh token from frontend:{0}", refreshToken);
 
-        // UPDLOCK+ROWLOCK: any other request trying to touch this same row
-        // has to wait here until this transaction commits or rolls back.
-        var user = await _context.Users
-            .FromSqlInterpolated($@"
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            // UPDLOCK+ROWLOCK: any other request trying to touch this same row
+            // has to wait here until this transaction commits or rolls back.
+            var user = await _context.Users
+                .FromSqlInterpolated($@"
             SELECT * FROM Users WITH (UPDLOCK, ROWLOCK)
             WHERE RefreshToken = {refreshToken} OR PreviousRefreshToken = {refreshToken}")
-            .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync();
 
-        if (user == null)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogWarning("Refresh rejected because the token was not associated with a user");
-            return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
-        }
-        _logger.LogInformation("refreshtoken from database {0}",user.RefreshToken);
-        // Case 1: current token — rotate normally
-        if (user.RefreshToken == refreshToken)
-        {
-            if (user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            if (user == null)
             {
                 await transaction.RollbackAsync();
-                _logger.LogWarning("Refresh rejected because the session expired for user {UserId}", user.Id);
-                return (false, "Session expired. Please log in again.", null, null);
+                _logger.LogWarning("Refresh rejected because the token was not associated with a user");
+                return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
+            }
+            _logger.LogInformation("refreshtoken from database {0}", user.RefreshToken);
+            // Case 1: current token — rotate normally
+            if (user.RefreshToken == refreshToken)
+            {
+                if (user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogWarning("Refresh rejected because the session expired for user {UserId}", user.Id);
+                    return (false, "Session expired. Please log in again.", null, null);
+                }
+
+                string newAccessToken = GenerateJwtToken(user);
+                string newRefreshToken = GenerateRefreshToken();
+
+                user.PreviousRefreshToken = user.RefreshToken;
+                user.PreviousRefreshTokenExpiry = DateTime.UtcNow.AddSeconds(10);
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                _logger.LogInformation("Refresh token rotated for user {UserId}", user.Id);
+                return (true, "Token renewed successfully!", newAccessToken, newRefreshToken);
             }
 
-            string newAccessToken = GenerateJwtToken(user);
-            string newRefreshToken = GenerateRefreshToken();
+            // Case 2: just-rotated-out token, within grace window — benign race
+            if (user.PreviousRefreshToken == refreshToken && user.PreviousRefreshTokenExpiry > DateTime.UtcNow)
+            {
+                string newAccessToken = GenerateJwtToken(user);
+                await transaction.CommitAsync();
+                _logger.LogInformation("Refresh token grace window used for user {UserId}", user.Id);
+                return (true, "Token renewed successfully!", newAccessToken, user.RefreshToken);
+            }
 
-            user.PreviousRefreshToken = user.RefreshToken;
-            user.PreviousRefreshTokenExpiry = DateTime.UtcNow.AddSeconds(10);
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-
+            // Case 3: stale beyond grace window — kill the session
+            user.RefreshToken = null;
+            user.PreviousRefreshToken = null;
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-            _logger.LogInformation("Refresh token rotated for user {UserId}", user.Id);
-            return (true, "Token renewed successfully!", newAccessToken, newRefreshToken);
-        }
-
-        // Case 2: just-rotated-out token, within grace window — benign race
-        if (user.PreviousRefreshToken == refreshToken && user.PreviousRefreshTokenExpiry > DateTime.UtcNow)
-        {
-            string newAccessToken = GenerateJwtToken(user);
-            await transaction.CommitAsync();
-            _logger.LogInformation("Refresh token grace window used for user {UserId}", user.Id);
-            return (true, "Token renewed successfully!", newAccessToken, user.RefreshToken);
-        }
-
-        // Case 3: stale beyond grace window — kill the session
-        user.RefreshToken = null;
-        user.PreviousRefreshToken = null;
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
-        _logger.LogWarning("Stale refresh token revoked and session cleared for user {UserId}", user.Id);
-        return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
+            _logger.LogWarning("Stale refresh token revoked and session cleared for user {UserId}", user.Id);
+            return (false, "Invalid or expired refresh token session. Please log in again.", null, null);
+        });
     }
 
     public async Task<bool> RevokeRefreshTokenAsync(string refreshToken)
