@@ -325,7 +325,7 @@ function LoginandSignup() {
   const handleGoogleSuccess=async (credentialResponse)=>{
     console.log("🚀 Google Login Token Received:", credentialResponse);
               try {
-                const response = await fetch("http://localhost:5040/api/RegisterandLogin/google-login", {
+                const response = await apiFetch("/api/RegisterandLogin/google-login", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   credentials: "include",
