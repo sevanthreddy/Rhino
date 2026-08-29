@@ -18,7 +18,7 @@ function ChatView() {
     const location = useLocation();
     const [showpeople, setshowpeople] = useState(false);
     const [allusers, setallusers] = useState(null);
-    const { onlineUsers, connection, listofNewMessageSenders,accessToken,setaccessToken,apiFetch } = useGlobalContext();
+    const { onlineUsers, connection, listofNewMessageSenders, accessToken, setaccessToken, apiFetch } = useGlobalContext();
     const { userid } = useParams();
     const [typingUsers, setTypingUsers] = useState(new Set());
     const [searchResults, setSearchResults] = useState([]);
@@ -56,7 +56,7 @@ function ChatView() {
     }, [onlineUsers]);
 
     const fetchallchats = async () => {
-        if(!accessToken){
+        if (!accessToken) {
             return;
         }
         const response = await apiFetch('/api/Message/chats', {
@@ -131,29 +131,29 @@ function ChatView() {
                         </div>
                     </div>
                     {searchResults.length <= 0 &&
-                     <div className="md:col-span-3! col-span-12 flex flex-col  flex-1 min-h-0 p-2 overflow-y-auto">{/*section for showing all chats*/}
-                        {allchats && allchats.map((eachchat) => (
-                            <div key={eachchat.userid} onClick={() => { handleClickAChat(eachchat.userid, eachchat.name) }} className="flex items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200">
-                                <div className="size-4 sm:size-7 md:size-8 bg-gray-400 rounded-3xl relative">
-                                    {eachchat.profilePicture && (
-                                        <img src={getAssetUrl(`/uploads/${eachchat.profilePicture}`)} className="w-full h-full rounded-3xl" />
-                                    )}
-                                    {onlineUsers.has(eachchat.userid) && (
-                                        <div className="absolute bottom-0 right-0 size-2 sm:size-2.5 md:size-3 rounded-full bg-green-500 border border-white"></div>
-                                    )}
-                                </div>{/*for profile circle */}
-                                <div
-                                    className={`text-sm md:text-lg! ${listofNewMessageSenders.includes(eachchat.userid)
-                                        ? "font-bold text-yellow-500"
-                                        : ""
-                                        }`}
-                                >
-                                    {eachchat.name}
+                        <div className="md:col-span-3! col-span-12 flex flex-col  flex-1 min-h-0 p-2 overflow-y-auto">{/*section for showing all chats*/}
+                            {allchats && allchats.map((eachchat) => (
+                                <div key={eachchat.userid} onClick={() => { handleClickAChat(eachchat.userid, eachchat.name) }} className="flex items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200">
+                                    <div className="size-4 sm:size-7 md:size-8 bg-gray-400 rounded-3xl relative flex-shrink-0">
+                                        {eachchat.profilePicture && (
+                                            <img src={getAssetUrl(`/uploads/${eachchat.profilePicture}`)} className="w-full h-full rounded-3xl" />
+                                        )}
+                                        {onlineUsers.has(eachchat.userid) && (
+                                            <div className="absolute bottom-0 right-0 size-2 sm:size-2.5 md:size-3 rounded-full bg-green-500 border border-white"></div>
+                                        )}
+                                    </div>{/*for profile circle */}
+                                    <div
+                                        className={`min-w-0 flex-1 truncate text-sm md:text-lg! ${listofNewMessageSenders.includes(eachchat.userid)
+                                                ? "font-bold text-yellow-500"
+                                                : ""
+                                            }`}
+                                    >
+                                        {eachchat.name}
+                                    </div>
+                                    {typingUsers.has(eachchat.userid) && <div className="text-sm text-green-500 ml-auto">Typing</div>}
                                 </div>
-                                {typingUsers.has(eachchat.userid) && <div className="text-sm text-green-500 ml-auto">Typing</div>}
-                            </div>
-                        ))}
-                    </div>}
+                            ))}
+                        </div>}
                     {searchResults.length > 0 && <div className="md:col-span-3! col-span-12 flex flex-col border border-gray-200 flex-1 min-h-0 p-2 overflow-y-auto">{/*section for showing search results*/}
                         {searchResults.map((result) => (
                             <div key={result.messageid} className="flex items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200" onClick={() => { handleClickAChat(result.userid, result.name) }}>
@@ -166,8 +166,8 @@ function ChatView() {
                 </div>
                 <div
                     className={`${userid
-                            ? "col-span-12"
-                            : "hidden md:block!"
+                        ? "col-span-12"
+                        : "hidden md:block!"
                         } md:col-span-9! h-full min-h-0 rounded-xl border-[#F3DFC0] md:border md:border-gray-200 overflow-hidden`}
                 >{/*section for showing selected chat*/}
                     <Outlet context={{ selecteduser, fetchallchats }} />
@@ -192,7 +192,9 @@ function ChatView() {
                     <div className="flex flex-col items-center w-full">{/*list showing all users*/}
                         {allusers && allusers.map((eachuser) => (
                             <div className="p-2 hover:bg-gray-200 cursor-pointer w-full flex justify-center" onClick={() => { handleClickAChat(eachuser.userid, eachuser.name) }}>
-                                <div>{eachuser.name}</div>
+                                <div className="truncate min-w-0 flex-1 ml-2">
+                                    {eachuser.name}
+                                </div>
                             </div>
                         ))}
 
