@@ -6,5 +6,7 @@ public class CreatePostDto
 
     public int UserId { get; set; }
 
-    public List<IFormFile> Images { get; set; } = new();
+    public List<IFormFile> Media { get; set; } = new();
+
+    public string? Videos { get; set; }
 }

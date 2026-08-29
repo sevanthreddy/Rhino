@@ -67,4 +67,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<Message> Message { get; set; }
 
     public DbSet<Notifications> Notifications{get;set;}
+
+    public DbSet<Video> Video{get;set;}
 }

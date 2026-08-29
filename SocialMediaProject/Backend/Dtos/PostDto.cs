@@ -21,4 +21,6 @@ public class PostDto
     public List<string> ImagesRelatedtoPost { get; set; } = null!;
 
     public string? profileImage { get; set; } = null!;
+
+    public string? VideoURL{get;set;}
 }

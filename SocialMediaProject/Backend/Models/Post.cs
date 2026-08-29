@@ -13,5 +13,5 @@ public class Post
     public ICollection<Replies> Replies { get; set; } = new List<Replies>();
 
     public ICollection<Images> Images{get;set;}=new List<Images>();
-
+    public ICollection<Video> video{get;set;}=null!;
 }

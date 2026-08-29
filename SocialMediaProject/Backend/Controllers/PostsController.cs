@@ -67,9 +67,9 @@ public class PostsController : ControllerBase
 
         var createdPost = await PostService.CreatePostAsync(createPostDto);
         return Ok(new
-{
-    id = createdPost.Id
-});
+        {
+            id = createdPost.Id
+        });
     }
 
     [HttpPost("like/{postid}")]
@@ -86,6 +86,34 @@ public class PostsController : ControllerBase
             likeCount = Nooflikes,
             result = result
         });
+    }
+
+    [HttpGet("upload-sas")]
+    public async Task<IActionResult> GetUploadSas(
+    string fileName,
+    string contentType)
+    {
+        try
+        {
+            var result = await PostService.GenerateVideoUploadSasAsync(fileName,contentType);
+            return Ok(new
+        {
+            uploadUrl = result,
+            fileName = fileName
+        });
+        }catch(Exception ex)
+        {
+            _logger.LogError(ex.ToString());
+            return StatusCode(500, new
+            {
+                message = ex.Message,
+                stackTrace = ex.StackTrace,
+                inner = ex.InnerException?.ToString()
+            }); 
+        }
+        
+
+        
     }
 
 

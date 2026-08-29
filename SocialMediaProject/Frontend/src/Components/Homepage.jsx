@@ -11,7 +11,7 @@ import { useGlobalContext } from "../context/GlobalContext";
 import { useMediaQuery } from "react-responsive";
 import { IoNotificationsOutline } from "react-icons/io5";
 import { FaHippo } from "react-icons/fa";
-
+import { BlockBlobClient } from "@azure/storage-blob";
 
 
 
@@ -110,60 +110,238 @@ function Homepage() {
   const handleCreatePost = async (e, mode, content, selectedFiles) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    console.log(content)
-    formData.append("Content", content);
+    try {
+      // -----------------------------------------
+      // 1. Separate images and videos
+      // -----------------------------------------
 
-    if (selectedFiles != undefined) {
-      // Append each image separately
-      selectedFiles.forEach((file) => {
-        formData.append("Images", file);
+      const images = selectedFiles?.filter(
+        file => file.type.startsWith("image/")
+      ) || [];
+
+      const videos = selectedFiles?.filter(
+        file => file.type.startsWith("video/")
+      ) || [];
+
+
+      // -----------------------------------------
+      // 2. Upload videos directly to Azure Blob
+      // -----------------------------------------
+
+      const uploadedVideos = [];
+
+      for (const video of videos) {
+
+        console.log("🎥 Requesting SAS for:", video.name);
+
+        const params = new URLSearchParams({
+          fileName: video.name,
+          contentType: video.type
+        });
+
+        const sasResponse = await apiFetch(
+          `/api/Posts/upload-sas?${params.toString()}`,
+          {
+            method: "GET"
+          }
+        );
+
+        if (!sasResponse.ok) {
+          console.error(
+            "❌ Failed to get SAS:",
+            await sasResponse.text()
+          );
+
+          throw new Error(
+            "Failed to get video upload permission"
+          );
+        }
+
+
+        const sasData = await sasResponse.json();
+
+        console.log("✅ SAS received:", sasData);
+
+
+        // -----------------------------------------
+        // 3. Browser → Azure Blob directly
+        // -----------------------------------------
+
+        const blockBlobClient = new BlockBlobClient(
+          sasData.uploadUrl
+        );
+
+        await blockBlobClient.uploadData(video, {
+          blobHTTPHeaders: {
+            blobContentType: video.type
+          }
+        });
+
+
+        console.log(
+          "✅ Video uploaded:",
+          sasData.fileName
+        );
+
+
+        // -----------------------------------------
+        // 4. Store metadata
+        // -----------------------------------------
+
+        uploadedVideos.push({
+          blobName: sasData.fileName,
+          contentType: video.type,
+          fileSize: video.size
+        });
+      }
+
+
+      // -----------------------------------------
+      // 5. Create FormData
+      // -----------------------------------------
+
+      const formData = new FormData();
+
+      formData.append(
+        "Content",
+        content
+      );
+
+
+      // -----------------------------------------
+      // 6. Add ONLY images
+      // -----------------------------------------
+
+      images.forEach((image) => {
+
+        formData.append(
+          "Media",
+          image
+        );
+
       });
 
-    }
 
+      // -----------------------------------------
+      // 7. Add video metadata
+      // -----------------------------------------
 
-    // Debug
-    for (const [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-    const postId = location.pathname.split("/home/post/")[1];
-    if (postId != null || postId != undefined) {
-      formData.append("PostId", postId);
-    } else {
-    }
+      if (uploadedVideos.length > 0) {
 
-    if (mode === "Post") {
-      const response = await apiFetch('/api/Posts/create', {
-        method: "POST",
-        body: formData,
-      });
+        formData.append(
+          "Videos",
+          JSON.stringify(uploadedVideos)
+        );
 
-      if (response.ok) {
-        fetchpostsfromdb();
-      } else {
-        console.log(await response.text());
-      }
-    } else {
-      if (selectedpost) {
-        formData.append("PostId", selectedpost.id);
-      } else {
-        formData.append("PostId", postId);
       }
 
 
-      const response = await apiFetch('/api/ReplyTo/post', {
-        method: "POST",
-        body: formData,
-      });
+      // -----------------------------------------
+      // 8. Get PostId
+      // -----------------------------------------
 
-      if (response.ok) {
-        console.log("reply successfull");
-      } else {
-        console.log(await response.text());
+      const postId =
+        location.pathname.split("/home/post/")[1];
+
+
+      if (postId) {
+
+        formData.append(
+          "PostId",
+          postId
+        );
+
       }
-    }
 
+
+      // -----------------------------------------
+      // 9. Create Post
+      // -----------------------------------------
+
+      if (mode === "Post") {
+
+        const response = await apiFetch(
+          "/api/Posts/create",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
+
+
+        if (response.ok) {
+
+          console.log(
+            "✅ Post created successfully"
+          );
+
+          fetchpostsfromdb();
+
+        } else {
+
+          console.log(
+            await response.text()
+          );
+
+        }
+
+      }
+
+
+      // -----------------------------------------
+      // 10. Create Reply
+      // -----------------------------------------
+
+      else {
+
+        if (selectedpost) {
+
+          formData.append(
+            "PostId",
+            selectedpost.id
+          );
+
+        } else {
+
+          formData.append(
+            "PostId",
+            postId
+          );
+
+        }
+
+
+        const response = await apiFetch(
+          "/api/ReplyTo/post",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
+
+
+        if (response.ok) {
+
+          console.log(
+            "✅ Reply successful"
+          );
+
+        } else {
+
+          console.log(
+            await response.text()
+          );
+
+        }
+      }
+
+    } catch (error) {
+
+      console.error(
+        "💥 Create post failed:",
+        error
+      );
+    }
   };
 
   const handleclosecommentmodal = () => {
@@ -186,17 +364,17 @@ function Homepage() {
 
   const UpdatePostAfterLike = (postId, likeCount, isLiked) => {
     setposts(prevPosts =>
-        prevPosts.map(post =>
-            post.id === postId
-                ? {
-                    ...post,
-                    likeCount: likeCount,
-                    isLiked: isLiked
-                }
-                : post
-        )
+      prevPosts.map(post =>
+        post.id === postId
+          ? {
+            ...post,
+            likeCount: likeCount,
+            isLiked: isLiked
+          }
+          : post
+      )
     );
-};
+  };
 
   return (
     <div className='h-[var(--app-height,100dvh)] w-full overflow-hidden bg-[#FFF7E8]'>

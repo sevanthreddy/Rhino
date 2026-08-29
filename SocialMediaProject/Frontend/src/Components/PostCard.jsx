@@ -7,13 +7,13 @@ import { getAssetUrl } from '../config';
 import { useGlobalContext } from "../context/GlobalContext";
 
 
-function PostCard({ post, onProfileClick, oncommentclick, onClick,onLikeUpdated }) {
-  const { id, username, initials, timeAgo, content, avatarColor = 'bg-blue-500', likeCount, isLiked,profileImage } = post;
+function PostCard({ post, onProfileClick, oncommentclick, onClick, onLikeUpdated }) {
+  const { id, username, initials, timeAgo, content, avatarColor = 'bg-blue-500', likeCount, isLiked, profileImage, videoURL } = post;
   var imagesRelatedtoPost = post.imagesRelatedtoPost;
   const [likecountofpost, setlikecountofpost] = useState(likeCount);
   const [liked, setliked] = useState(isLiked);
   const [commentclick, setcommentclick] = useState(false);
-  const { accessToken,apiFetch } = useGlobalContext();
+  const { accessToken, apiFetch } = useGlobalContext();
 
 
   const handleClickLike = async (e) => {
@@ -33,8 +33,8 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick,onLikeUpdated 
         post.id,
         data.likeCount,
         data.result
-    );
-     
+      );
+
 
       liked === false ? setliked(true) : setliked(false);
     }
@@ -52,24 +52,24 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick,onLikeUpdated 
     const url = `${window.location.origin}/home/post/${post.id}`;
 
     if (!navigator.share) {
-        console.log("Web Share API not supported");
-        return;
+      console.log("Web Share API not supported");
+      return;
     }
 
     navigator.share({
-        title: "Rhino Post",
-        text: "Check out this post!",
-        url: url
+      title: "Rhino Post",
+      text: "Check out this post!",
+      url: url
     })
-    .then(() => {
+      .then(() => {
         console.log("Shared successfully");
-    })
-    .catch((err) => {
+      })
+      .catch((err) => {
         if (err.name !== "AbortError") {
-            console.error("Share failed:", err);
+          console.error("Share failed:", err);
         }
-    });
-};
+      });
+  };
 
   const handleProfileClick = (e) => {
     e.stopPropagation();
@@ -104,6 +104,15 @@ function PostCard({ post, onProfileClick, oncommentclick, onClick,onLikeUpdated 
                   />
                 );
               })}
+            {videoURL && (
+              <video
+                src={videoURL}
+                preload="none"
+
+                controls
+                className="w-full h-[400px] object-cover rounded-lg"
+              />
+            )}
           </div>
           <div className='flex mt-2  w-full justify-between '>
             <div className='flex items-center hover:text-red-500'>{/*For Likes*/}

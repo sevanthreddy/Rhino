@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Azure.Messaging.ServiceBus;
+using System.Text.Json;
 
 public class PostService : IPostService
 {
@@ -15,56 +16,96 @@ public class PostService : IPostService
     private readonly BlobStorageService _blobStorage;
 
 
-    public PostService(ApplicationDbContext context,INotificationService notificationService,ServiceBusPublisher serviceBusPublisher,BlobStorageService blobStorageService,ILogger<PostService> logger)
+
+    public PostService(ApplicationDbContext context, INotificationService notificationService, ServiceBusPublisher serviceBusPublisher, BlobStorageService blobStorageService, ILogger<PostService> logger)
     {
         _context = context;
-        _notificationService=notificationService;
-        _servicebusPublisher=serviceBusPublisher;
-        _logger=logger;
-        _blobStorage=blobStorageService;
+        _notificationService = notificationService;
+        _servicebusPublisher = serviceBusPublisher;
+        _logger = logger;
+        _blobStorage = blobStorageService;
     }
 
-public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
-{
-    try
+    public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
     {
-        var result = await _context.Posts
-            .Include(p => p.User)
-            .OrderByDescending(p => p.CreatedAt)
-            .Select(p => new PostDto
+        try
+        {
+            var posts = await _context.Posts
+    .Include(p => p.User)
+    .Include(p => p.Images)
+    .Include(p => p.video)
+    .Include(p => p.Likes)
+    .OrderByDescending(p => p.CreatedAt)
+    .ToListAsync();
+
+            var result = new List<PostDto>();
+
+            foreach (var p in posts)
             {
-                Id = p.Id,
-                Content = p.Content,
-                CreatedAt = p.CreatedAt,
-                UserId = p.UserId,
-                TimeAgo = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-                Initials = p.User.Username.Length >= 2
-                    ? p.User.Username.Substring(0, 2).ToUpper()
-                    : p.User.Username.ToUpper(),
-                Username = p.User.Username,
-                LikeCount = p.Likes.Count(),
-                IsLiked = p.Likes.Any(l => l.Userid == userid),
-                ImagesRelatedtoPost = p.Images
-                    .Select(i => i.ImageURL)
-                    .ToList(),
-                profileImage = p.User.ProfileImageURL
-            })
-            .ToListAsync();
+                var videoUrls = new List<string>();
 
-        return result;
+                foreach (var video in p.video)
+                {
+                    var videoUrl =
+                        await _blobStorage.GenerateReadSasAsync(
+                            video.BlobName
+                        );
+
+                    videoUrls.Add(videoUrl);
+                }
+
+                result.Add(new PostDto
+                {
+                    Id = p.Id,
+
+                    Content = p.Content,
+
+                    CreatedAt = p.CreatedAt,
+
+                    UserId = p.UserId,
+
+                    TimeAgo = p.CreatedAt.ToString(
+                        "yyyy-MM-dd HH:mm:ss"
+                    ),
+
+                    Initials = p.User.Username.Length >= 2
+                        ? p.User.Username
+                            .Substring(0, 2)
+                            .ToUpper()
+                        : p.User.Username.ToUpper(),
+
+                    Username = p.User.Username,
+
+                    LikeCount = p.Likes.Count(),
+
+                    IsLiked = p.Likes.Any(
+                        l => l.Userid == userid
+                    ),
+
+                    ImagesRelatedtoPost = p.Images
+                        .Select(i => i.ImageURL)
+                        .ToList(),
+
+                    profileImage = p.User.ProfileImageURL,
+
+                    VideoURL = videoUrls.FirstOrDefault() ?? string.Empty
+                });
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GET POSTS FAILED");
+            throw;
+        }
     }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "GET POSTS FAILED");
-        throw;
-    }
-}
-    
+
 
 
     public async Task<PostDto> GetPostByIdAsync(int userid, int postid)
     {
-        var posts = await _context.Posts.Include(p=>p.User).Where(p => p.Id == postid).FirstOrDefaultAsync();
+        var posts = await _context.Posts.Include(p => p.User).Where(p => p.Id == postid).FirstOrDefaultAsync();
         if (posts == null)
         {
             return null;
@@ -99,30 +140,77 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
 
         _context.Posts.Add(post);
         await _context.SaveChangesAsync();
-        if (createPostDto.Images.Count > 0)
+
+
+        // ==========================================
+        // IMAGES
+        // ==========================================
+
+        if (createPostDto.Media.Count > 0)
         {
             var images = new List<Images>();
-            foreach (var image in createPostDto.Images)
+
+            foreach (var image in createPostDto.Media)
             {
-                var filename = Guid.NewGuid() + Path.GetExtension(image.FileName);
-                var imageUrl = await _blobStorage.UploadAsync(image, filename);
+                var filename =
+                    Guid.NewGuid() + Path.GetExtension(image.FileName);
+
+                var imageUrl =
+                    await _blobStorage.UploadAsync(image, filename);
+
                 images.Add(new Images
                 {
                     postid = post.Id,
                     ImageURL = imageUrl
                 });
-                //var pathcombine = Path.Combine("wwwroot", "Uploads", filename);
-                //var filestream = new FileStream(pathcombine, FileMode.Create);
-                //await image.CopyToAsync(filestream);
-                
             }
+
             _context.Images.AddRange(images);
-            await _context.SaveChangesAsync();
         }
+
+
+        // ==========================================
+        // VIDEOS
+        // ==========================================
+
+        if (!string.IsNullOrEmpty(createPostDto.Videos))
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var videoMetadata =
+                JsonSerializer.Deserialize<List<VideoMetadataDto>>(
+                    createPostDto.Videos,
+                    options
+                );
+
+            if (videoMetadata != null && videoMetadata.Count > 0)
+            {
+                var videos = new List<Video>();
+
+                foreach (var video in videoMetadata)
+                {
+                    videos.Add(new Video
+                    {
+                        PostId = post.Id,
+                        BlobName = video.BlobName,
+                        ContentType = video.ContentType,
+                        FileSize = video.FileSize
+                    });
+                }
+
+                _context.Video.AddRange(videos);
+            }
+        }
+
+
+        // Save images + video metadata
+        await _context.SaveChangesAsync();
 
         return post;
     }
-
     public async Task<(int, bool)> LikePostAsync(int postid, int userid)
     {
         try
@@ -146,16 +234,16 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
             _context.Likes.Add(like);
 
             await _context.SaveChangesAsync();
-           
+
             await _servicebusPublisher.SendAsync(new NotificationDto
             {
-                Content="Liked Your Post",
-                Senderid=userid,
-                IsRead=false,
-                CreatedAt=DateTime.UtcNow,
-                Type="Like",
-                ReceiverId=await _context.Posts.Where(P=>P.Id==postid).Select(P=>P.UserId).FirstOrDefaultAsync()
-                
+                Content = "Liked Your Post",
+                Senderid = userid,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow,
+                Type = "Like",
+                ReceiverId = await _context.Posts.Where(P => P.Id == postid).Select(P => P.UserId).FirstOrDefaultAsync()
+
             });
 
             int totallikes = await _context.Likes.Where(p => p.Postid == postid).CountAsync();
@@ -168,5 +256,14 @@ public async Task<IEnumerable<PostDto>> GetPostsAsync(int userid)
         }
 
 
+    }
+
+    public async Task<string> GenerateVideoUploadSasAsync(
+    string fileName,
+    string contentType)
+    {
+        return await _blobStorage.GenerateUploadSasAsync(
+            fileName,
+            contentType);
     }
 }

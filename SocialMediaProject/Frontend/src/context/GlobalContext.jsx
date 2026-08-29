@@ -179,10 +179,7 @@ export function GlobalProvider({ children }) {
 
     const apiFetch = async (path, options = {}) => {
 
-        console.log(
-            "apiFetch token:",
-            accessToken
-        );
+        console.log( "apiFetch token:", accessToken );
 
         console.log(
             "api path:",
