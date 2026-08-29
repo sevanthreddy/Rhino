@@ -10,5 +10,7 @@ public class ReplyPostDto
 
     public List<string> ImagesRelatedtoPost { get; set; } = new();
 
+    public string Initials{get;set;}=string.Empty;
+
 
 }

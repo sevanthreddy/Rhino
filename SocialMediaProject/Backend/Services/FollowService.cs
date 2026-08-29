@@ -71,7 +71,7 @@ public class FollowService : IFollowService
         }
     }
 
-    public async Task<IEnumerable<PostDto>> GetClickedTabDataAsync(string username, string action)
+    public async Task<IEnumerable<object>> GetClickedTabDataAsync(string username, string action)
     {
         try
         {
@@ -97,12 +97,28 @@ public class FollowService : IFollowService
                     ImagesRelatedtoPost = _context.Images.Where(i => i.postid == posts.Id).Select(i => "uploads/" + i.ImageURL).ToList()
                 });
                 return datattorontend;
+            }else if (action == "Replies")
+            {
+                var x= await _context.Replies.Where(r=>r.UserId==userid).OrderByDescending(r=>r.CreatedAt).ToListAsync();
+                var intitials=await _context.Users.Where(u=>u.Id==userid).Select(u=>u.Username).FirstOrDefaultAsync();
+
+                var replies=x.Select(r=>new ReplyPostDto
+                {
+                    Content=r.Content,
+                    CreatedAt=r.CreatedAt,
+                    UserId=r.UserId,
+                    PostId=r.PostId,
+                    Username=username,
+                    ImagesRelatedtoPost=_context.Images.Where(i=>i.postid==r.PostId).Select(i=>i.ImageURL).ToList(),
+                    Initials=username.Length>=2?username.Substring(0,2).ToUpper():username.ToUpper()
+                });
+                return replies;
             }
-            return Enumerable.Empty<PostDto>();
+            return Enumerable.Empty<object>();
         }
         catch
         {
-            return Enumerable.Empty<PostDto>();
+            return Enumerable.Empty<object>();
         }
     }
 }

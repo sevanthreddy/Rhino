@@ -8,6 +8,6 @@ public interface IFollowService
 
      Task<FollowInfoDto> GetFollowInfoAsync(int followerid,string username);
 
-     Task<IEnumerable<PostDto>> GetClickedTabDataAsync(string username,string action);
+     Task<IEnumerable<object>> GetClickedTabDataAsync(string username,string action);
 
 }

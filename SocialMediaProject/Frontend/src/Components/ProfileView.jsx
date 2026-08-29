@@ -22,6 +22,8 @@ function ProfileView() {
     const [clickedTab, setclickedTab] = useState("Posts");
     const [posts, setposts] = useState(null);
     const navigate=useNavigate();
+    const { apiFetch } = useGlobalContext();
+
 
     useEffect(() => {
         getUserFollowInfo()
@@ -30,7 +32,7 @@ function ProfileView() {
     useEffect(() => {
         getAllPosts();
 
-    }, []);
+    }, [clickedTab]);
 
     const handleFollowClick = async () => {
         if (username == localStorage.getItem("username")) {
