@@ -22,6 +22,16 @@ public class AuthService : IAuthService
 
     public async Task<(bool Success, string Message)> RegisterUserAsync(RegisterDto registerDto)
     {
+        var validationMessage = ValidateRegistration(registerDto);
+
+        if (validationMessage != null)
+        {
+            _logger.LogWarning(
+                "Registration validation failed: {Message}",
+                validationMessage);
+
+            return (false, validationMessage);
+        }
         // 1. Check Username
         if (await _context.Users.AnyAsync(u => u.Username == registerDto.Username.Trim().ToLower()))
         {
@@ -232,5 +242,93 @@ public class AuthService : IAuthService
             _logger.LogError(ex, "Refresh token revocation failed");
             return false;
         }
+    }
+
+    private string? ValidateRegistration(RegisterDto registerDto)
+    {
+        // -----------------------------------------
+        // Username
+        // -----------------------------------------
+
+        if (string.IsNullOrWhiteSpace(registerDto.Username))
+        {
+            return "Username is required";
+        }
+
+        var username = registerDto.Username.Trim();
+
+        if (username.Length < 3)
+        {
+            return "Username must be at least 3 characters";
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(
+            username,
+            @"^[a-zA-Z0-9_]+$"))
+        {
+            return "Username can only contain letters, numbers and _";
+        }
+
+
+        // -----------------------------------------
+        // Email
+        // -----------------------------------------
+
+        if (string.IsNullOrWhiteSpace(registerDto.Email))
+        {
+            return "Email is required";
+        }
+
+        var email = registerDto.Email.Trim();
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(
+            email,
+            @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
+        {
+            return "Please enter a valid email address";
+        }
+
+
+        // -----------------------------------------
+        // Password
+        // -----------------------------------------
+
+        if (string.IsNullOrEmpty(registerDto.Password))
+        {
+            return "Password is required";
+        }
+
+        if (registerDto.Password.Length < 8)
+        {
+            return "Password must be at least 8 characters";
+        }
+
+        if (!registerDto.Password.Any(char.IsUpper))
+        {
+            return "Password must contain an uppercase letter";
+        }
+
+        if (!registerDto.Password.Any(char.IsLower))
+        {
+            return "Password must contain a lowercase letter";
+        }
+
+        if (!registerDto.Password.Any(char.IsDigit))
+        {
+            return "Password must contain a number";
+        }
+
+        if (!registerDto.Password.Any(
+            c => !char.IsLetterOrDigit(c)))
+        {
+            return "Password must contain a special character";
+        }
+
+
+        // -----------------------------------------
+        // Everything is valid
+        // -----------------------------------------
+
+        return null;
     }
 }

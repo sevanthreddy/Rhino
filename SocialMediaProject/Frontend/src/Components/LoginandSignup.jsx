@@ -11,15 +11,31 @@ import { GoogleLogin } from "@react-oauth/google";
 function LoginandSignup() {
 
   const [username, setusername] = useState("");
-  const [email, setemail] = useState(""); const [password, setpassword] = useState("");
+  const [email, setemail] = useState("");
+  const [password, setpassword] = useState("");
   const [loggedin, setloggedin] = useState(false);
   const [authmode, setauthmode] = useState("login");
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const trial = useSelector((state) => state.auth.username);
-  
+  const [errors, setErrors] = useState({});
+  const passwordConditions = {
+    minLength: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  };
 
-  const { apiFetch, setLoginToken, setUserId, setUser, accessToken, authLoading,setaccessToken } = useGlobalContext();
+  const isStrongPassword =
+    passwordConditions.minLength &&
+    passwordConditions.uppercase &&
+    passwordConditions.lowercase &&
+    passwordConditions.number &&
+    passwordConditions.special;
+
+
+  const { apiFetch, setLoginToken, setUserId, setUser, accessToken, authLoading, setaccessToken } = useGlobalContext();
 
 
   // =========================
@@ -40,6 +56,94 @@ function LoginandSignup() {
 
   }, [accessToken]);
 
+  const validateForm = () => {
+
+    const newErrors = {};
+
+    if (authmode === "Create") {
+
+      // Username
+      if (!username.trim()) {
+        newErrors.username = "Username is required";
+      }
+      else if (username.trim().length < 3) {
+        newErrors.username =
+          "Username must be at least 3 characters";
+      }
+      else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
+        newErrors.username =
+          "Username can only contain letters, numbers and _";
+      }
+
+
+      // Email
+      if (!email.trim()) {
+        newErrors.email = "Email is required";
+      }
+      else if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+      ) {
+        newErrors.email =
+          "Please enter a valid email address";
+      }
+
+
+      // Password
+      const passwordError =
+        validatePassword(password);
+
+      if (passwordError) {
+        newErrors.password = passwordError;
+      }
+    }
+    else {
+
+      // Login
+      if (!email.trim()) {
+        newErrors.email =
+          "Email or username is required";
+      }
+
+      if (!password) {
+        newErrors.password =
+          "Password is required";
+      }
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePassword = (value) => {
+
+    if (!value) {
+      return "Password is required";
+    }
+
+    if (value.length < 8) {
+      return "Password must be at least 8 characters";
+    }
+
+    if (!/[A-Z]/.test(value)) {
+      return "Password must contain an uppercase letter";
+    }
+
+    if (!/[a-z]/.test(value)) {
+      return "Password must contain a lowercase letter";
+    }
+
+    if (!/[0-9]/.test(value)) {
+      return "Password must contain a number";
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+      return "Password must contain a special character";
+    }
+
+    return "";
+  };
+
 
   // =========================
   // LOGIN / REGISTER
@@ -53,6 +157,9 @@ function LoginandSignup() {
 
 
     e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
 
 
     // =========================
@@ -209,7 +316,7 @@ function LoginandSignup() {
       catch (error) {
 
         console.error(
-          "❌ Login error:",
+          " Login error:",
           error
         );
 
@@ -296,15 +403,20 @@ function LoginandSignup() {
   // =========================
 
   const handlechoice = () => {
+    setemail("");
+      setpassword("");
+      setusername("");
 
     if (authmode === "Create") {
 
       setauthmode("login");
+      
 
     }
     else {
 
       setauthmode("Create");
+      
     }
   };
 
@@ -322,31 +434,31 @@ function LoginandSignup() {
     );
   }
 
-  const handleGoogleSuccess=async (credentialResponse)=>{
+  const handleGoogleSuccess = async (credentialResponse) => {
     console.log("🚀 Google Login Token Received:", credentialResponse);
-              try {
-                const response = await apiFetch("/api/RegisterandLogin/google-login", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                  body: JSON.stringify({ Token: credentialResponse.credential })
-                });
+    try {
+      const response = await apiFetch("/api/RegisterandLogin/google-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ Token: credentialResponse.credential })
+      });
 
-                const contentType = response.headers.get("content-type");
-                let data = contentType && contentType.includes("application/json") ? await response.json() : await response.text();
+      const contentType = response.headers.get("content-type");
+      let data = contentType && contentType.includes("application/json") ? await response.json() : await response.text();
 
-                if (response.ok) {
-                  console.log("🎯 Backend Google Login Success:", data);
-                  setaccessToken(data.token);
-                  navigate("/home"); 
-                  alert("Logged in with Google successfully!");
-                } else {
-                  console.log("⚠️ Backend rejected Google token:", data);
-                  alert(`Google login failed on server: ${data}`);
-                }
-              } catch (err) {
-                console.error("💥 Network error connecting to backend:", err);
-              }
+      if (response.ok) {
+        console.log("🎯 Backend Google Login Success:", data);
+        setaccessToken(data.token);
+        navigate("/home");
+        alert("Logged in with Google successfully!");
+      } else {
+        console.log("⚠️ Backend rejected Google token:", data);
+        alert(`Google login failed on server: ${data}`);
+      }
+    } catch (err) {
+      console.error("💥 Network error connecting to backend:", err);
+    }
 
   }
 
@@ -371,12 +483,59 @@ function LoginandSignup() {
           {authmode === "Create" &&
             (<input onChange={(e) => { setusername(e.target.value); }} value={username} placeholder="Enter Username"
               className="w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500" />)}
-          <input onChange={(e) => { setemail(e.target.value); }} value={email} placeholder="Enter Email Address or Username"
-            className="w-full border rounded-xl p-3 m-2 border-slate-800 outline-none focus:border-blue-500" />
+          <input
+            onChange={(e) => { setemail(e.target.value); setErrors((prev) => ({ ...prev, email: "" })); }} value={email}
+            placeholder={authmode === "Create" ? "Enter Email Address" : "Enter Email Address or Username"}
+            className={`w-full border rounded-xl p-3 m-2 outline-none focus:border-blue-500 ${errors.email ? "border-red-500" : "border-slate-800"}`} />
+
+          {errors.email && (
+            <p className="text-red-400 text-sm px-3">
+              {errors.email}
+            </p>
+          )}
 
 
-          <input type="password" onChange={(e) => { setpassword(e.target.value); }} value={password} placeholder="Password"
-            className="w-full border border-slate-800 rounded-xl p-3 m-2 outline-none focus:border-blue-500" />
+          <div className="w-full">
+
+            <input
+              type="password"
+              onChange={(e) => {
+
+                const value = e.target.value;
+
+                setpassword(value);
+
+                if (authmode === "Create") {
+
+                  const passwordError =
+                    validatePassword(value);
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    password: passwordError
+                  }));
+                }
+
+              }}
+              value={password}
+              placeholder="Password"
+              className={`w-full border rounded-xl p-3 m-2 outline-none transition-colors duration-200 ${errors?.password
+                ? "border-red-500 focus:border-red-500"
+                : authmode === "Create" &&
+                  password.length > 0 &&
+                  isStrongPassword
+                  ? "border-green-500 focus:border-green-500"
+                  : "border-slate-800 focus:border-blue-500"
+                }`}
+            />
+
+            {errors?.password && (
+              <p className="text-red-400 text-sm px-3">
+                {errors.password}
+              </p>
+            )}
+
+          </div>
 
 
           <button type="submit" className="rounded-2xl w-full p-2 m-2 bg-blue-700 hover:bg-blue-500" >

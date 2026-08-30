@@ -18,7 +18,7 @@ function ChatView() {
     const location = useLocation();
     const [showpeople, setshowpeople] = useState(false);
     const [allusers, setallusers] = useState(null);
-    const { onlineUsers, connection, listofNewMessageSenders, accessToken, setaccessToken, apiFetch } = useGlobalContext();
+    const { onlineUsers, connection, listofNewMessageSenders, accessToken, setaccessToken, apiFetch,latestMessage } = useGlobalContext();
     const { userid } = useParams();
     const [typingUsers, setTypingUsers] = useState(new Set());
     const [searchResults, setSearchResults] = useState([]);
@@ -76,8 +76,11 @@ function ChatView() {
         }
     }
     useEffect(() => {
+        if (!accessToken) return;
+
         fetchallchats();
-    }, [accessToken]);
+
+    }, [accessToken, latestMessage]);
     const handleClickAChat = async (userId, username) => {
         navigate(`/home/chat/${userId}`);
         setselecteduser(username);
@@ -144,8 +147,8 @@ function ChatView() {
                                     </div>{/*for profile circle */}
                                     <div
                                         className={`min-w-0 flex-1 truncate text-sm md:text-lg! ${listofNewMessageSenders.includes(eachchat.userid)
-                                                ? "font-bold text-yellow-500"
-                                                : ""
+                                            ? "font-bold text-yellow-500"
+                                            : ""
                                             }`}
                                     >
                                         {eachchat.name}
