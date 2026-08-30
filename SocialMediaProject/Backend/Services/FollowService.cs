@@ -8,10 +8,13 @@ namespace Backend.Services;
 public class FollowService : IFollowService
 {
     public readonly ApplicationDbContext _context;
+    private readonly ServiceBusPublisher _servicebusPublisher;
 
-    public FollowService(ApplicationDbContext applicationDbContext)
+
+    public FollowService(ApplicationDbContext applicationDbContext,ServiceBusPublisher serviceBusPublisher)
     {
         _context = applicationDbContext;
+        _servicebusPublisher=serviceBusPublisher;
     }
 
     public async Task<bool> FollowUserAsync(int followerid, string username)
@@ -30,6 +33,15 @@ public class FollowService : IFollowService
             {
                 _context.Follow.Remove(r);
                 await _context.SaveChangesAsync();
+                await _servicebusPublisher.SendAsync(new NotificationDto
+            {
+                Content = "UnFollowed You",
+                Senderid = followerid,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow,
+                Type = "UnFollow",
+                ReceiverId = followingid
+            });
                 return true;
             }
 
@@ -39,6 +51,15 @@ public class FollowService : IFollowService
                 FollowingId = followingid
             });
             await _context.SaveChangesAsync();
+            await _servicebusPublisher.SendAsync(new NotificationDto
+            {
+                Content = "Followed You",
+                Senderid = followerid,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow,
+                Type = "Follow",
+                ReceiverId = followingid
+            });
             return true;
         }
         catch
