@@ -425,14 +425,14 @@ function LoginandSignup() {
   // WAIT FOR AUTH CHECK
   // =========================
 
-  if (authLoading) {
+  //if (authLoading) {
 
-    return (
-      <div>
-        Loading...
-      </div>
-    );
-  }
+    //return (
+     // <div>
+      //  Loading...
+      //</div>
+    //);
+  //}
 
   const handleGoogleSuccess = async (credentialResponse) => {
     console.log("🚀 Google Login Token Received:", credentialResponse);
