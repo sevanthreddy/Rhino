@@ -29,6 +29,8 @@ function Homepage() {
   const [fold, setfold] = useState(false);
   const { connection, setOnlineUsers, setConnection, setUser } = useGlobalContext();
   const isMobile = useMediaQuery({ maxWidth: 767 });
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const { unreadMessagesCount, setUnreadMessagesCount, setLatestMessage, unreadnotificationsCount, setunreadnotificationsCount, accessToken, setaccessToken, apiFetch } = useGlobalContext();
 
   useEffect(() => {
@@ -170,18 +172,31 @@ function Homepage() {
         const blockBlobClient = new BlockBlobClient(
           sasData.uploadUrl
         );
+        setIsUploading(true);
+        setUploadProgress(0);
 
         await blockBlobClient.uploadData(video, {
           blobHTTPHeaders: {
             blobContentType: video.type
+          }, onProgress: (progress) => {
+            const percentage =
+              Math.round((progress.loadedBytes / video.size) * 100);
+
+            setUploadProgress(percentage);
+
+            console.log(
+              `🎥 Upload progress: ${percentage}%`
+            );
           }
         });
 
+        setUploadProgress(100);
+        setIsUploading(false);
 
-        console.log(
-          "✅ Video uploaded:",
-          sasData.fileName
-        );
+        console.log("✅ Video uploaded successfully");
+
+
+        console.log( "✅ Video uploaded:", sasData.fileName );
 
 
         // -----------------------------------------
@@ -415,7 +430,8 @@ function Homepage() {
             </div>
           </div>)}
         <div className={`${fold ? "col-span-11" : "col-span-6"} h-full  min-h-0 overflow-y-auto  p-1`}>
-          {fold == false && location.pathname === "/home" && <CreatePostCard oncreate={fetchpostsfromdb} createpost={handleCreatePost}></CreatePostCard>}
+          {fold == false && location.pathname === "/home" && <CreatePostCard oncreate={fetchpostsfromdb} createpost={handleCreatePost} uploadProgress={uploadProgress}
+    isUploading={isUploading}></CreatePostCard>}
           {fold == false && location.pathname === "/home" && posts.map((everypost) => (
             <PostCard key={everypost.id} onProfileClick={handleProfileClick} oncommentclick={handleCommentClick} post={everypost} onClick={() => handleClickPost(everypost.id)} onLikeUpdated={UpdatePostAfterLike}></PostCard>
           ))}

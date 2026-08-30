@@ -4,7 +4,8 @@ import { FiImage } from "react-icons/fi";
 import { useOutletContext } from "react-router-dom";
 
 
-const CreatePostCard = ({ oncreate, createpost }) => {
+const CreatePostCard = ({ oncreate, createpost,uploadProgress,
+    isUploading }) => {
     //const  { handleCreatePost } = useOutletContext();
 
     const [content, setContent] = useState("");
@@ -39,6 +40,8 @@ const CreatePostCard = ({ oncreate, createpost }) => {
         await createpost(e, mode, content, selectedFiles);
         await oncreate();
         setContent("");
+        setSelectedFiles([]);
+
     }
 
     return (
@@ -79,6 +82,23 @@ const CreatePostCard = ({ oncreate, createpost }) => {
                         ))}
                     </div>
                 )}
+
+                {/* Upload progress */}
+{isUploading && (
+    <div className="mb-3">
+        <div className="flex justify-between text-sm text-gray-500 mb-1">
+            <span>Uploading video...</span>
+            <span>{uploadProgress}%</span>
+        </div>
+
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+                className="h-full bg-blue-500 transition-all duration-200"
+                style={{ width: `${uploadProgress}%` }}
+            />
+        </div>
+    </div>
+)}
 
                 <div className="flex items-center">
 
