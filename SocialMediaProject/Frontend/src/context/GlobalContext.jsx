@@ -776,11 +776,9 @@ export function GlobalProvider({ children }) {
             }}
         >
 
-            {authLoading ? (
-            <div>Loading...</div>
-        ) : (
-            children
-        )}
+            
+            {children}
+        
 
         </GlobalContext.Provider>
     );
