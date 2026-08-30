@@ -136,17 +136,17 @@ function ChatView() {
                     {searchResults.length <= 0 &&
                         <div className="md:col-span-3! col-span-12 flex flex-col  flex-1 min-h-0 p-2 overflow-y-auto">{/*section for showing all chats*/}
                             {allchats && allchats.map((eachchat) => (
-                                <div key={eachchat.userid} onClick={() => { handleClickAChat(eachchat.userid, eachchat.name) }} className="flex items-center border-b border-gray-200 h-10 w-full cursor-pointer gap-1 hover:bg-gray-200">
-                                    <div className="size-4 sm:size-7 md:size-8 bg-gray-400 rounded-3xl relative flex-shrink-0">
+                                <div key={eachchat.userid} onClick={() => { handleClickAChat(eachchat.userid, eachchat.name) }} className="flex min-h-14 md:min-h-10 items-center border-b border-gray-200  w-full cursor-pointer gap-1 hover:bg-gray-200">
+                                    <div className="size-10 sm:size-10 md:size-8 bg-gray-400 rounded-3xl relative flex-shrink-0">{/*for profile circle */}
                                         {eachchat.profilePicture && (
                                             <img src={getAssetUrl(`/uploads/${eachchat.profilePicture}`)} className="w-full h-full rounded-3xl" />
                                         )}
                                         {onlineUsers.has(eachchat.userid) && (
                                             <div className="absolute bottom-0 right-0 size-2 sm:size-2.5 md:size-3 rounded-full bg-green-500 border border-white"></div>
                                         )}
-                                    </div>{/*for profile circle */}
+                                    </div>
                                     <div
-                                        className={`min-w-0 flex-1 truncate text-sm md:text-lg! ${listofNewMessageSenders.includes(eachchat.userid)
+                                        className={`min-w-0 flex-1 truncate text-base md:text-lg! ${listofNewMessageSenders.includes(eachchat.userid)
                                             ? "font-bold text-yellow-500"
                                             : ""
                                             }`}
