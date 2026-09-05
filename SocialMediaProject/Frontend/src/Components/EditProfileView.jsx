@@ -14,6 +14,8 @@ function EditProfileView({ onclose }) {
         bio: "",
         profileImage: null
     });
+        const {  apiFetch } = useGlobalContext();
+
 
     const handleImageUploadClick = () => {
         fileinputrefhandler.current.click();

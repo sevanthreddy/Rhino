@@ -6,7 +6,7 @@ namespace Backend.Services;
 public interface IAuthService
 {
     Task<(bool Success, string Message)> RegisterUserAsync(RegisterDto registerDto);
-    Task<(bool Success, string Message, string? Token, string? RefreshToken)> LoginUserAsync(LoginDto loginDto);
+    Task<(bool Success, string Message, string? Token, string? RefreshToken, UserDto? User)> LoginUserAsync(LoginDto loginDto);
     string GenerateJwtToken(User user);
 
     Task<(bool Success, string Message, string? NewAccessToken, string? NewRefreshToken)> RefreshTokenAsync(string refreshToken);

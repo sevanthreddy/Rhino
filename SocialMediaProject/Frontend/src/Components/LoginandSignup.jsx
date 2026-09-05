@@ -293,10 +293,16 @@ function LoginandSignup() {
               decodedUsername,
 
             token:
-              data.token
+              data.token,
+
+            profilePictureUrl:
+              data.user?.profilePictureUrl || null
 
           })
         );
+        console.log(data.user);
+
+          
 
 
         // =========================

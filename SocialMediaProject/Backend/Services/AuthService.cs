@@ -60,7 +60,7 @@ public class AuthService : IAuthService
         return (true, "User registered successfully");
     }
 
-    public async Task<(bool Success, string Message, string? Token, string? RefreshToken)> LoginUserAsync(LoginDto loginDto)
+    public async Task<(bool Success, string Message, string? Token, string? RefreshToken, UserDto? User)> LoginUserAsync(LoginDto loginDto)
     {
         // Check if the user exists by username or email
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == loginDto.Identifier.Trim().ToLower() || u.Email == loginDto.Identifier.ToLower().Trim());
@@ -68,22 +68,28 @@ public class AuthService : IAuthService
         if (user == null)
         {
             _logger.LogWarning("Login rejected for unknown identifier: {Identifier}", loginDto.Identifier);
-            return (false, "Invalid username/email or password", null, null);
+            return (false, "Invalid username/email or password", null, null, null);
         }
 
         // Check if the password matches
         if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
         {
             _logger.LogWarning("Login rejected because password verification failed for user {UserId}", user.Id);
-            return (false, "Invalid username/email or password", null, null);
+            return (false, "Invalid username/email or password", null, null, null);
         }
         string refreshToken = GenerateRefreshToken();
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
+        var userDto = new UserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            profilePictureUrl = user.ProfileImageURL
+        };
         _logger.LogInformation("User logged in successfully: {UserId}", user.Id);
-        return (true, "Login successful", GenerateJwtToken(user), user.RefreshToken);
+        return (true, "Login successful", GenerateJwtToken(user), user.RefreshToken, userDto);
     }
 
     public string GenerateJwtToken(Models.User user)

@@ -4,9 +4,12 @@ using Microsoft.EntityFrameworkCore;
 public class ProfileService : IProfileService
 {
     private readonly ApplicationDbContext _context;
-    public ProfileService(ApplicationDbContext context)
+    private readonly BlobStorageService _blobStorage;
+
+    public ProfileService(ApplicationDbContext context, BlobStorageService blobStorage)
     {
         _context=context;
+        _blobStorage=blobStorage;
     }
     public async Task<bool> SaveProfileInfoAsync(EditProfileDto editProfileDto)
     {
@@ -17,10 +20,14 @@ public class ProfileService : IProfileService
             user.About=editProfileDto.Bio;
             if (editProfileDto.profileimage!=null)
             {
-                var filename=Guid.NewGuid()+Path.GetExtension(editProfileDto.profileimage.FileName);
-                var pathcombine = Path.Combine("wwwroot", "Uploads", filename);
-                var filestream = new FileStream(pathcombine, FileMode.Create);
-                await editProfileDto.profileimage.CopyToAsync(filestream);
+                var filename =
+                    Guid.NewGuid() + Path.GetExtension(editProfileDto.profileimage.FileName);
+
+                var imageUrl =
+                    await _blobStorage.UploadAsync(editProfileDto.profileimage, filename);
+
+                
+                
                 user.ProfileImageURL=filename;
                 
             }

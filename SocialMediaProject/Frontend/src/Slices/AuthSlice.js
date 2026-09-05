@@ -14,6 +14,7 @@ const authSlice = createSlice({
             state.username = action.payload.username;
             state.token = action.payload.token;
             state.isLoggedIn = action.payload.isLoggedIn;
+            state.profilePictureUrl = action.payload.profilePictureUrl || null;
         },
         logout(state) {
 
@@ -22,6 +23,7 @@ const authSlice = createSlice({
             state.token = "";
 
             state.isLoggedIn = false;
+            state.profilePictureUrl = null;
 
         }
     }

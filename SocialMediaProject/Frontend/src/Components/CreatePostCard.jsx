@@ -2,9 +2,10 @@ import React, { use, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { FiImage } from "react-icons/fi";
 import { useOutletContext } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 
-const CreatePostCard = ({ oncreate, createpost,uploadProgress,
+const CreatePostCard = ({ oncreate, createpost, uploadProgress,
     isUploading }) => {
     //const  { handleCreatePost } = useOutletContext();
 
@@ -13,6 +14,10 @@ const CreatePostCard = ({ oncreate, createpost,uploadProgress,
     const [previewUrls, setPreviewUrls] = useState([]);
     const [mode, setmode] = useState("Post");
     const location = useLocation();
+
+
+    const username = useSelector((state) => state.auth.username);
+    const profilePictureUrl = useSelector((state) => state.auth.profilePictureUrl);
 
     useEffect(() => {
         if (location.pathname.startsWith("/home/post/")) {
@@ -47,7 +52,11 @@ const CreatePostCard = ({ oncreate, createpost,uploadProgress,
     return (
         <div className="flex border border-gray-200 p-2 rounded-xl m-1 bg-white">
             <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-white">
-                {localStorage.getItem("initials")}
+                {profilePictureUrl ? (
+                    <img src={"https://rhinostorage.blob.core.windows.net/postimages/" + profilePictureUrl} alt="Profile" className="h-full w-full rounded-full object-cover" />
+                ) : (
+                    username ? username.charAt(0).toUpperCase() : ""
+                )}
             </div>
 
             <div className="ml-2 flex-1">
@@ -84,21 +93,21 @@ const CreatePostCard = ({ oncreate, createpost,uploadProgress,
                 )}
 
                 {/* Upload progress */}
-{isUploading && (
-    <div className="mb-3">
-        <div className="flex justify-between text-sm text-gray-500 mb-1">
-            <span>Uploading video...</span>
-            <span>{uploadProgress}%</span>
-        </div>
+                {isUploading && (
+                    <div className="mb-3">
+                        <div className="flex justify-between text-sm text-gray-500 mb-1">
+                            <span>Uploading video...</span>
+                            <span>{uploadProgress}%</span>
+                        </div>
 
-        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-                className="h-full bg-blue-500 transition-all duration-200"
-                style={{ width: `${uploadProgress}%` }}
-            />
-        </div>
-    </div>
-)}
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-blue-500 transition-all duration-200"
+                                style={{ width: `${uploadProgress}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex items-center">
 

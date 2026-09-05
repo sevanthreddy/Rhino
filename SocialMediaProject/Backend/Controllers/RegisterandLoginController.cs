@@ -58,7 +58,7 @@ public class RegisterandLoginController : ControllerBase
         try
         {
             // Implement login logic here
-            var (success, message, token, refreshToken) = await _authService.LoginUserAsync(loginDto);
+            var (success, message, token, refreshToken, user) = await _authService.LoginUserAsync(loginDto);
 
             if (!success)
             {
@@ -78,7 +78,7 @@ public class RegisterandLoginController : ControllerBase
                 Expires = DateTimeOffset.UtcNow.AddDays(_cookieOptions.ExpirationDays)
             });
 
-            return Ok(new { Message = message, Token = token });
+            return Ok(new { Message = message, Token = token, User = user });
 
         }
         catch (Exception ex)
